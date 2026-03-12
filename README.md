@@ -89,7 +89,7 @@ FLUSH PRIVILEGES;
 เริ่มต้นการทำงานของ Backend API:
 
 ```bash
-npm run dev
+npm start
 
 ```
 
