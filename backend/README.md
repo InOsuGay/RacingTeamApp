@@ -13,8 +13,6 @@ f1-backend/
 ├── package.json
 ├── config/
 │   └── db.js               ← MySQL connection pool
-├── migrations/
-│   └── migrate.js          ← สร้างตาราง DB ทั้งหมด
 ├── routes/
 │   └── index.js            ← รวม routes ทุกตาราง
 ├── controllers/
@@ -55,13 +53,7 @@ DB_NAME=f1_racing
 PORT=3000
 ```
 
-### 3. รัน Migration (สร้างตารางทั้งหมด)
-
-```bash
-npm run migrate
-```
-
-### 4. เริ่มเซิร์ฟเวอร์
+### 3. เริ่มเซิร์ฟเวอร์
 
 ```bash
 # Development (auto-restart)
