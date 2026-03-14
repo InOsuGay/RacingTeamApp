@@ -4,7 +4,7 @@ const { pool } = require('../config/db');
 async function getAll(req, res, next) {
   try {
     const [rows] = await pool.query(
-      'SELECT user_id, username, role FROM Users'
+      'SELECT user_id, username, password_hash, role FROM Users'
     );
     res.json({ success: true, data: rows });
   } catch (err) { next(err); }
