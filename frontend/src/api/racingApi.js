@@ -56,4 +56,20 @@ export const addResult = (data) => api.post('/results', data);
 export const deleteResult = (id) => api.delete(`/results/${id}`);
 export const updateResult = (id, data) => api.put(`/results/${id}`, data);
 
+/* ======================
+USERS
+====================== */
+
+export const addUser = (data) => api.post('/users', data);
+export const deleteUser = (id) => api.delete(`/users/${id}`);
+export const updateUser = (id, data) => api.put(`/users/${id}`, data);
+
+/* ======================
+SEASONS
+====================== */
+
+export const addSeason = (data) => api.post('/seasons', data);
+export const deleteSeason = (id) => api.delete(`/seasons/${id}`);
+export const updateSeason = (id, data) => api.put(`/seasons/${id}`, data);
+
 export default api;

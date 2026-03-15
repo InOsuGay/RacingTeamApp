@@ -26,7 +26,7 @@ CREATE TABLE Drivers (
     first_name VARCHAR(100),
     last_name VARCHAR(100),
     driver_number INT(3),
-    FOREIGN KEY (team_id) REFERENCES Teams(team_id) ON DELETE CASCADE
+    FOREIGN KEY (team_id) REFERENCES Teams(team_id) ON DELETE SET NULL
 );
 
 -- 4. ตาราง Cars 
@@ -37,7 +37,7 @@ CREATE TABLE Cars (
     model VARCHAR(100),
     car_number INT(3),
     specs TEXT,
-    FOREIGN KEY (team_id) REFERENCES Teams(team_id) ON DELETE CASCADE
+    FOREIGN KEY (team_id) REFERENCES Teams(team_id) ON DELETE SET NULL
 );
 
 -- 5. ตาราง Seasons 
@@ -68,6 +68,6 @@ CREATE TABLE Race_Results (
     status ENUM('Finished', 'DNF', 'DSQ', 'DNS'), 
     points_earned INT(3),
     FOREIGN KEY (race_id) REFERENCES Races(race_id) ON DELETE CASCADE,
-    FOREIGN KEY (driver_id) REFERENCES Drivers(driver_id) ON DELETE CASCADE,
-    FOREIGN KEY (car_id) REFERENCES Cars(car_id) ON DELETE CASCADE
+    FOREIGN KEY (driver_id) REFERENCES Drivers(driver_id) ON DELETE SET NULL,
+    FOREIGN KEY (car_id) REFERENCES Cars(car_id) ON DELETE SET NULL
 );

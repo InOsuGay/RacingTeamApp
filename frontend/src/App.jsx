@@ -21,16 +21,18 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [formData, setFormData] = useState({
-    // Driver fields
-    first_name: '',
-    last_name: '',
-    driver_number: '',
-    team_id: '',
-    // Team fields
-    name: '',
-    contact_info: '',
-    manager_id: ''
+    first_name: '', last_name: '', driver_number: '', team_id: '',
+    name: '', contact_info: '', manager_id: '',
+    brand: '', model: '', car_number: '', specs: '',
+    season_id: '', race_name: '', location: '', race_date: '', total_laps: '',
+    race_id: '', driver_id: '', car_id: '', finish_position: '', is_fastest_lap: false, status: 'Finished', points_earned: '',
+    year: '', username: '', password_hash: '', role: 'user'
   });
+
+  const [driversList, setDriversList] = useState([]);
+  const [carsList, setCarsList] = useState([]);
+  const [racesList, setRacesList] = useState([]);
+  const [seasonsList, setSeasonsList] = useState([]);
 
   //  Dashboard Stats
   const [stats, setStats] = useState({
@@ -79,12 +81,19 @@ function App() {
 
   const fetchDashboardStats = async () => {
     try {
-      const [teamsRes, driversRes, carsRes, racesRes] = await Promise.all([
+      const [teamsRes, driversRes, carsRes, racesRes, seasonsRes] = await Promise.all([
         api.getTeams(),
         api.getDrivers(),
         api.getCars(),
-        api.getRaces()
+        api.getRaces(),
+        api.getSeasons?.() || { data: { data: [] } }
       ]);
+
+      setTeams(teamsRes.data.data);
+      setDriversList(driversRes.data.data);
+      setCarsList(carsRes.data.data);
+      setRacesList(racesRes.data.data);
+      setSeasonsList(seasonsRes.data.data || []);
 
       setStats({
         teams: teamsRes.data.data.length,
@@ -149,7 +158,8 @@ function App() {
         if (activeTab === 'Cars') await api.deleteCar(row.car_id);
         if (activeTab === 'Races') await api.deleteRace(row.race_id);
         if (activeTab === 'Results') await api.deleteResult(row.result_id);
-        // เพิ่มเงื่อนไขลบสำหรับ Tab อื่นๆ
+        if (activeTab === 'Manage Users') await api.deleteUser(row.user_id);
+        if (activeTab === 'Manage Seasons') await api.deleteSeason(row.season_id);
         loadTabData();
       } catch (err) {
         alert('Deletion failed: ' + err.message);
@@ -162,14 +172,23 @@ function App() {
     try {
       if (activeTab === 'Drivers') await api.addDriver(formData);
       if (activeTab === 'Teams') await api.addTeam(formData);
-      // รองรับการเพิ่มข้อมูลจาก Tab อื่นๆ
+      if (activeTab === 'Cars') await api.addCar(formData);
+      if (activeTab === 'Races') await api.addRace(formData);
+      if (activeTab === 'Results') await api.addResult(formData);
+      if (activeTab === 'Manage Users') await api.addUser(formData);
+      if (activeTab === 'Manage Seasons') await api.addSeason(formData);
       
       setIsModalOpen(false);
       setFormData({ 
         first_name: '', last_name: '', driver_number: '', team_id: '',
-        name: '', contact_info: '', manager_id: ''
+        name: '', contact_info: '', manager_id: '',
+        brand: '', model: '', car_number: '', specs: '',
+        season_id: '', race_name: '', location: '', race_date: '', total_laps: '',
+        race_id: '', driver_id: '', car_id: '', finish_position: '', is_fastest_lap: false, status: 'Finished', points_earned: '',
+        year: '', username: '', password_hash: '', role: 'user'
       });
       loadTabData();
+      fetchDashboardStats();
     } catch (err) {
       alert('Creation failed: ' + err.message);
     }
@@ -400,6 +419,79 @@ function App() {
                       onChange={e => setFormData({ ...formData, manager_id: e.target.value })}
                     />
                   )}
+                </>
+              )}
+
+              {activeTab === 'Cars' && (
+                <>
+                  <input type="text" placeholder="Brand" value={formData.brand || ''} onChange={e => setFormData({ ...formData, brand: e.target.value })} required />
+                  <input type="text" placeholder="Model" value={formData.model || ''} onChange={e => setFormData({ ...formData, model: e.target.value })} />
+                  <input type="number" placeholder="Car Number" value={formData.car_number || ''} onChange={e => setFormData({ ...formData, car_number: e.target.value })} />
+                  <input type="text" placeholder="Specs" value={formData.specs || ''} onChange={e => setFormData({ ...formData, specs: e.target.value })} />
+                  <select value={formData.team_id || ''} onChange={e => setFormData({ ...formData, team_id: e.target.value })} required>
+                    <option value="">Select Team</option>
+                    {teams.map(t => <option key={t.team_id} value={t.team_id}>{t.name}</option>)}
+                  </select>
+                </>
+              )}
+
+              {activeTab === 'Races' && (
+                <>
+                  <input type="text" placeholder="Race Name" value={formData.race_name || ''} onChange={e => setFormData({ ...formData, race_name: e.target.value })} required />
+                  <input type="text" placeholder="Location" value={formData.location || ''} onChange={e => setFormData({ ...formData, location: e.target.value })} />
+                  <input type="date" value={formData.race_date || ''} onChange={e => setFormData({ ...formData, race_date: e.target.value })} required />
+                  <input type="number" placeholder="Total Laps" value={formData.total_laps || ''} onChange={e => setFormData({ ...formData, total_laps: e.target.value })} />
+                  <select value={formData.season_id || ''} onChange={e => setFormData({ ...formData, season_id: e.target.value })} required>
+                    <option value="">Select Season</option>
+                    {seasonsList.map(s => <option key={s.season_id} value={s.season_id}>{s.year}</option>)}
+                  </select>
+                </>
+              )}
+
+              {activeTab === 'Results' && (
+                <>
+                  <select value={formData.race_id || ''} onChange={e => setFormData({ ...formData, race_id: e.target.value })} required>
+                    <option value="">Select Race</option>
+                    {racesList.map(r => <option key={r.race_id} value={r.race_id}>{r.race_name}</option>)}
+                  </select>
+                  <select value={formData.driver_id || ''} onChange={e => setFormData({ ...formData, driver_id: e.target.value })} required>
+                    <option value="">Select Driver</option>
+                    {driversList.map(d => <option key={d.driver_id} value={d.driver_id}>{d.first_name} {d.last_name}</option>)}
+                  </select>
+                  <select value={formData.car_id || ''} onChange={e => setFormData({ ...formData, car_id: e.target.value })} required>
+                    <option value="">Select Car</option>
+                    {carsList.map(c => <option key={c.car_id} value={c.car_id}>{c.brand} {c.model}</option>)}
+                  </select>
+                  <input type="number" placeholder="Finish Position" value={formData.finish_position || ''} onChange={e => setFormData({ ...formData, finish_position: e.target.value })} required />
+                  <input type="number" placeholder="Points Earned" value={formData.points_earned || ''} onChange={e => setFormData({ ...formData, points_earned: e.target.value })} />
+                  <select value={formData.status || 'Finished'} onChange={e => setFormData({ ...formData, status: e.target.value })}>
+                    <option value="Finished">Finished</option>
+                    <option value="DNF">DNF</option>
+                    <option value="DSQ">DSQ</option>
+                    <option value="DNS">DNS</option>
+                  </select>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', color: 'var(--text-muted)' }}>
+                    <input type="checkbox" checked={formData.is_fastest_lap || false} onChange={e => setFormData({ ...formData, is_fastest_lap: e.target.checked })} />
+                    Fastest Lap
+                  </label>
+                </>
+              )}
+
+              {activeTab === 'Manage Seasons' && (
+                <>
+                  <input type="number" placeholder="Year" value={formData.year || ''} onChange={e => setFormData({ ...formData, year: e.target.value })} required />
+                </>
+              )}
+
+              {activeTab === 'Manage Users' && (
+                <>
+                  <input type="text" placeholder="Username" value={formData.username || ''} onChange={e => setFormData({ ...formData, username: e.target.value })} required />
+                  <input type="password" placeholder="Password" value={formData.password_hash || ''} onChange={e => setFormData({ ...formData, password_hash: e.target.value })} required />
+                  <select value={formData.role || 'user'} onChange={e => setFormData({ ...formData, role: e.target.value })} required>
+                    <option value="user">User</option>
+                    <option value="manager">Manager</option>
+                    <option value="admin">Admin</option>
+                  </select>
                 </>
               )}
               

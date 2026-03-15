@@ -17,13 +17,12 @@ function Login({ setIsLogin, setShowRegister, setRole }) {
 
     try{
 
-      const res = await axios.get("http://localhost:5000/api/users");
+      const res = await axios.post("http://localhost:5000/api/users/login", { username, password });
 
       if(res.data.success){
-        const user = res.data.data.find(u => u.username === username && u.password_hash === password);
+        const user = res.data.data;
 
         if (user) {
-          alert("Login success");
           
           // Map DB 'manager' to frontend 'team_manager' for tab permissions
           let userRole = user.role;

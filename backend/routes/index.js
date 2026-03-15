@@ -9,7 +9,8 @@ const seasons = require('../controllers/seasons');
 const races   = require('../controllers/races');
 const results = require('../controllers/results');
 
-// ── Users ────────────────────────────────────────────
+//   Users 
+router.post  ('/users/login', users.login);
 router.get   ('/users',     users.getAll);
 router.get   ('/users/:id', users.getById);
 router.post  ('/users',     users.create);
