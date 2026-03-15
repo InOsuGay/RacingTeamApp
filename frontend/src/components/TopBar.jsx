@@ -1,28 +1,35 @@
 import React from 'react';
-import { Bell, Search, Settings, LogOut } from 'lucide-react';
+import { Search, LogOut, Printer } from 'lucide-react';
 
-const TopBar = ({ title, onLogout }) => {
+const TopBar = ({ title, onLogout, searchTerm, setSearchTerm, onPrintClick, canPrint }) => {
   return (
     <header className="topbar">
       <div className="topbar-left">
-        <h1 className="topbar-title">{title} Management</h1>
+        <h1 className="topbar-title">{title}</h1>
       </div>
       
       <div className="topbar-right">
-        <div className="search-box">
-          <Search size={18} />
-          <input type="text" placeholder="Global search..." />
-        </div>
-        
-        <button className="icon-btn">
-          <Bell size={20} />
-          <span className="badge-dot"></span>
-        </button>
-        
-        <button className="icon-btn">
-          <Settings size={20} />
-        </button>
+         <div className="search-box">
+           <Search size={18} />
+           <input 
+             type="text" 
+             placeholder={`Search ${title}...`} 
+             value={searchTerm}
+             onChange={(e) => setSearchTerm(e.target.value)}
+           />
+         </div>
 
+         {canPrint && (
+           <button 
+             className="icon-btn" 
+             onClick={onPrintClick}
+             title="Print Report Configuration"
+             style={{ marginLeft: '10px' }}
+           >
+             <Printer size={20} />
+           </button>
+         )}
+ 
         {/* ปุ่ม Log Out - แยกให้ชัดเจนกว่าไอคอนเล็ก ๆ */}
         <button 
           className="btn-logout"

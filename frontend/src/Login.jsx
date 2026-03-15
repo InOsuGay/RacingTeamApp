@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 
-function Login({ setIsLogin, setShowRegister, setRole }) {   
+function Login({ setIsLogin, setShowRegister, setRole, setCurrentUser }) {   
 
   const [username,setUsername] = useState("");
   const [password,setPassword] = useState("");
@@ -24,20 +24,14 @@ function Login({ setIsLogin, setShowRegister, setRole }) {
 
         if (user) {
           
-          // Map DB 'manager' to frontend 'team_manager' for tab permissions
-          let userRole = user.role;
-          if (userRole === "manager") userRole = "team_manager";
+          const userRole = user.role;
 
           setRole(userRole);   
+          setCurrentUser(user); 
           setIsLogin(true);
           
-          if(userRole === "admin"){
-            navigate("/");
-          } else if(userRole === "race_manager"){
-            navigate("/");
-          } else if(userRole === "team_manager"){
-            navigate("/");
-          }
+          // All roles go to home for now, as App handles the layout
+          navigate("/");
         } else {
           alert("Invalid username or password");
         }
@@ -54,36 +48,53 @@ function Login({ setIsLogin, setShowRegister, setRole }) {
 
   return (
 
-    <div style={{textAlign:"center",marginTop:"150px"}}>
+    <div className="modal-backdrop" style={{ background: 'var(--bg-main)' }}>
+      <div className="modal-surface card" style={{ width: '400px', textAlign: 'center' }}>
+        <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '2rem', color: 'var(--primary)', letterSpacing: '0.05em' }}>
+          RACING MANAGEMENT
+        </h2>
 
-      <h2>Login</h2>
+        <div style={{ textAlign: 'left', marginBottom: '1.5rem' }}>
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px', color: 'var(--text-main)' }}>
+            Username
+          </label>
+          <input
+            type="text"
+            placeholder="Enter your username"
+            value={username}
+            onChange={(e)=>setUsername(e.target.value)}
+            style={{ marginBottom: '1rem' }}
+          />
 
-      <input
-        type="text"
-        placeholder="Username"
-        onChange={(e)=>setUsername(e.target.value)}
-      />
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px', color: 'var(--text-main)' }}>
+            Password
+          </label>
+          <input
+            type="password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e)=>setPassword(e.target.value)}
+            style={{ marginBottom: '1.5rem' }}
+          />
 
-      <br/><br/>
+          <button 
+            className="btn-primary" 
+            onClick={handleLogin}
+            style={{ width: '100%', padding: '14px' }}
+          >
+            Authenticate
+          </button>
+        </div>
 
-      <input
-        type="password"
-        placeholder="Password"
-        onChange={(e)=>setPassword(e.target.value)}
-      />
-
-      <br/><br/>
-
-      <button onClick={handleLogin}>
-        Login
-      </button>
-
-      <br/><br/>
-
-      <button onClick={()=>setShowRegister(true)}>
-        Create Account
-      </button>
-
+        <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
+          <button 
+            onClick={()=>setShowRegister(true)}
+            style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: '600', cursor: 'pointer', fontSize: '0.9rem' }}
+          >
+            Create System Account
+          </button>
+        </div>
+      </div>
     </div>
 
   );

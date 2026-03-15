@@ -3,11 +3,18 @@ const { pool } = require('../config/db');
 // GET /api/teams
 async function getAll(req, res, next) {
   try {
-    const [rows] = await pool.query(`
+    const { manager_id } = req.query;
+    let sql = `
       SELECT t.*, u.username AS manager_name
       FROM Teams t
       LEFT JOIN Users u ON t.manager_id = u.user_id
-    `);
+    `;
+    let params = [];
+    if (manager_id) {
+      sql += ' WHERE t.manager_id = ?';
+      params.push(manager_id);
+    }
+    const [rows] = await pool.query(sql, params);
     res.json({ success: true, data: rows });
   } catch (err) { next(err); }
 }

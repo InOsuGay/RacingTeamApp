@@ -3,11 +3,18 @@ const { pool } = require('../config/db');
 // GET /api/drivers
 async function getAll(req, res, next) {
   try {
-    const [rows] = await pool.query(`
+    const { manager_id } = req.query;
+    let sql = `
       SELECT d.*, t.name AS team_name
       FROM Drivers d
       LEFT JOIN Teams t ON d.team_id = t.team_id
-    `);
+    `;
+    let params = [];
+    if (manager_id) {
+      sql += ' WHERE t.manager_id = ?';
+      params.push(manager_id);
+    }
+    const [rows] = await pool.query(sql, params);
     res.json({ success: true, data: rows });
   } catch (err) { next(err); }
 }

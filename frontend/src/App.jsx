@@ -5,17 +5,22 @@ import DataTable from './components/DataTable';
 import * as api from './api/racingApi';
 import Login from './Login';
 import Register from "./Register";
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Printer } from 'lucide-react';
 import './index.css';
 
 function App() {
   const [isLogin, setIsLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [role, setRole] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState('Dashboard');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const [data, setData] = useState([]);
   const [teams, setTeams] = useState([]);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [categoriesToPrint, setCategoriesToPrint] = useState([]);
+  const [printDataStore, setPrintDataStore] = useState({});
   const [loading, setLoading] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,12 +50,14 @@ function App() {
   //  กำหนดสิทธิ์การมองเห็นเมนู (Tab) ตาม Role
   const getAllowedTabs = () => {
     if (role === "admin") {
-      return ["Dashboard", "Teams", "Drivers", "Cars", "Races", "Results"];
+      return ["Dashboard", "Teams", "Drivers", "Cars", "Races", "Results", "Manage Users", "Manage Seasons"];
     }
-    if (role === "race_manager") {
-      return ["Dashboard", "Races", "Results"];
+    if (role === "manager") {
+      // manager = เจ้าของงานแข่ง (Race Owner)
+      return ["Dashboard", "Teams", "Drivers", "Cars", "Races", "Results", "Manage Seasons"];
     }
-    if (role === "team_manager") {
+    if (role === "user") {
+      // user = ทีมที่มาแข่ง (Racing Team)
       return ["Dashboard", "Drivers", "Cars", "Results"];
     }
     return ["Dashboard"];
@@ -59,20 +66,23 @@ function App() {
   const handleLogout = () => {
     setIsLogin(false);
     setRole(null);
+    setCurrentUser(null);
     setActiveTab('Dashboard'); // Reset tab on logout
   };
 
   useEffect(() => {
-    if (isLogin) {
+    if (isLogin && currentUser) {
       fetchTeams();
       fetchDashboardStats();
       loadTabData();
+      setSearchTerm(''); 
     }
-  }, [activeTab, isLogin]);
+  }, [activeTab, isLogin, currentUser]);
 
   const fetchTeams = async () => {
     try {
-      const res = await api.getTeams();
+      const params = role === 'user' ? { manager_id: currentUser.user_id } : {};
+      const res = await api.getTeams(params);
       setTeams(res.data.data);
     } catch (err) {
       console.error('Failed to fetch teams', err);
@@ -81,11 +91,13 @@ function App() {
 
   const fetchDashboardStats = async () => {
     try {
+      const params = role === 'user' ? { manager_id: currentUser.user_id } : {};
+
       const [teamsRes, driversRes, carsRes, racesRes, seasonsRes] = await Promise.all([
-        api.getTeams(),
-        api.getDrivers(),
-        api.getCars(),
-        api.getRaces(),
+        api.getTeams(params),
+        api.getDrivers(params),
+        api.getCars(params),
+        api.getRaces(params),
         api.getSeasons?.() || { data: { data: [] } }
       ]);
 
@@ -112,23 +124,24 @@ function App() {
     setLoading(true);
 
     try {
-      let res = { data: [] };
+      const params = role === 'user' ? { manager_id: currentUser.user_id } : {};
+      let res = { data: { data: [] } }; // Initialize with correct structure
 
       switch (activeTab) {
         case 'Teams':
-          res = await api.getTeams();
+          res = await api.getTeams(params);
           break;
         case 'Drivers':
-          res = await api.getDrivers();
+          res = await api.getDrivers(params);
           break;
         case 'Cars':
-          res = await api.getCars();
+          res = await api.getCars(params);
           break;
         case 'Races':
-          res = await api.getRaces();
+          res = await api.getRaces(params);
           break;
         case 'Results':
-          res = await api.getResults();
+          res = await api.getResults(params);
           break;
         case 'Manage Users':
           res = await api.getUsers?.() || { data: { data: [] } }; 
@@ -194,9 +207,9 @@ function App() {
     }
   };
 
-  //  แมปคอลัมน์ของตารางให้ตรงกับ Tab ปัจจุบัน
-  const getColumns = () => {
-    switch (activeTab) {
+  //  แมปคอลัมน์ของตารางให้ตรงกับชื่อ Tab ที่ระบุ
+  const getColumns = (tabName = activeTab) => {
+    switch (tabName) {
       case 'Teams':
         return [
           { header: 'ID', key: 'team_id' },
@@ -251,6 +264,68 @@ function App() {
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const canPrintReport = () => {
+    if (role === 'admin') return true;
+    if (role === 'manager' && ['Teams', 'Drivers', 'Cars', 'Races', 'Results'].includes(activeTab)) return true;
+    if (role === 'user' && ['Drivers', 'Cars', 'Results'].includes(activeTab)) return true;
+    return false;
+  };
+
+  const handleGlobalPrint = async () => {
+    if (categoriesToPrint.length === 0) return;
+    
+    setLoading(true);
+    const newDataStore = {};
+    
+    try {
+      // Fetch fresh data for all selected categories
+      for (const cat of categoriesToPrint) {
+        let res;
+        if (cat === 'Teams') res = await api.getTeams();
+        if (cat === 'Drivers') res = await api.getDrivers();
+        if (cat === 'Cars') res = await api.getCars();
+        if (cat === 'Races') res = await api.getRaces();
+        if (cat === 'Results') res = await api.getResults();
+        if (cat === 'Manage Users') res = await api.getUsers();
+        if (cat === 'Manage Seasons') res = await api.getSeasons();
+        
+        newDataStore[cat] = res.data.data;
+      }
+      
+      setPrintDataStore(newDataStore);
+      setIsPrintModalOpen(false);
+      
+      // Wait for UI to update with the new data before printing
+      setTimeout(() => {
+        window.print();
+        setLoading(false);
+      }, 1000);
+      
+    } catch (err) {
+      console.error(err);
+      alert('Failed to prepare report data: ' + err.message);
+      setLoading(false);
+    }
+  };
+
+  const toggleCategory = (cat) => {
+    setCategoriesToPrint(prev => 
+      prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
+    );
+  };
+
+  const filteredData = data.filter(item => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return Object.values(item).some(val => 
+      String(val).toLowerCase().includes(searchLower)
+    );
+  });
+
   if (!isLogin) {
     if(showRegister){
       return <Register setShowRegister={setShowRegister} />;
@@ -260,6 +335,7 @@ function App() {
         setIsLogin={setIsLogin}
         setShowRegister={setShowRegister}
         setRole={setRole}
+        setCurrentUser={setCurrentUser}
       />
     );
   }
@@ -273,41 +349,107 @@ function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         allowedTabs={getAllowedTabs()}
+        user={currentUser}
       />
 
       <div className="main-wrapper">
         <TopBar
           title={activeTab}
           onLogout={handleLogout}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          onPrintClick={() => setIsPrintModalOpen(true)}
+          canPrint={role === 'admin' || role === 'manager' || role === 'user'}
         />
 
         <main className="content">
+          <div className="print-only">
+            {categoriesToPrint.length > 0 ? (
+              categoriesToPrint.map((cat, idx) => (
+                <div key={cat} style={{ pageBreakAfter: idx === categoriesToPrint.length - 1 ? 'auto' : 'always', marginBottom: '4rem' }}>
+                  <div className="print-header">
+                    <div>
+                      <h1 className="print-title">RACING MANAGEMENT</h1>
+                      <p style={{ margin: '4px 0 0 0', color: '#64748b' }}>Project Registry & Formal Report</p>
+                    </div>
+                    <div style={{ textAlign: 'right', fontSize: '0.85rem' }}>
+                      <div><strong>Content:</strong> {cat} Directory</div>
+                      <div><strong>Issued By:</strong> {currentUser?.username} ({role})</div>
+                      <div><strong>Date:</strong> {new Date().toLocaleString()}</div>
+                    </div>
+                  </div>
+                  
+                  <h2 style={{ marginBottom: '1.5rem', color: '#1e293b', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem' }}>
+                    {cat} Detailed Registry
+                  </h2>
+
+                  <table className="formal-table">
+                    <thead>
+                      <tr>
+                        {getColumns(cat).map(col => (
+                          <th key={col.header}>{col.header}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(printDataStore[cat] || []).map((row, rIdx) => (
+                        <tr key={rIdx}>
+                          {getColumns(cat).map(col => (
+                            <td key={col.header}>
+                              {col.render ? col.render(row) : row[col.key]}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  
+                  <div style={{ marginTop: '1.5rem', fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center' }}>
+                    End of {cat} Report Listing
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="print-header">
+                <div>
+                  <h1 className="print-title">RACING MANAGEMENT</h1>
+                  <p style={{ margin: '4px 0 0 0', color: '#64748b' }}>Project Registry & Formal Report</p>
+                </div>
+                <div style={{ textAlign: 'right', fontSize: '0.85rem' }}>
+                  <div><strong>Report Type:</strong> {activeTab} Directory</div>
+                  <div><strong>Generated By:</strong> {currentUser?.username} ({role})</div>
+                  <div><strong>Date:</strong> {new Date().toLocaleString()}</div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {activeTab === 'Dashboard' ? (
-            <div className="dashboard-home">
+            <div className="dashboard-view">
+              <div className="card welcome-card" style={{ marginBottom: '2.5rem', borderLeft: '4px solid var(--primary)' }}>
+                <h2 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>Control Panel Overview</h2>
+                <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>
+                  Authenticated as <strong>{role === 'admin' ? 'ADMIN' : role === 'manager' ? 'เจ้าของงานแข่ง' : 'ทีมที่มาแข่ง'}</strong>. Manage racing assets and operational data from the secure registry.
+                </p>
+              </div>
+
               <div className="stats-grid">
                 <div className="stat-card">
                   <h3>{stats.teams}</h3>
-                  <p>Total Teams</p>
+                  <p>Racing Teams</p>
                 </div>
                 <div className="stat-card">
                   <h3>{stats.drivers}</h3>
-                  <p>Total Drivers</p>
+                  <p>Professional Drivers</p>
                 </div>
                 <div className="stat-card">
                   <h3>{stats.cars}</h3>
-                  <p>Total Cars</p>
+                  <p>Racing Cars</p>
                 </div>
                 <div className="stat-card">
                   <h3>{stats.races}</h3>
-                  <p>Total Races</p>
+                  <p>Season Races</p>
                 </div>
-              </div>
-
-              <div className="card" style={{marginTop:"20px"}}>
-                <h2>Welcome to Database Controller ({role})</h2>
-                <p style={{ marginTop: '1rem', color: 'var(--text-muted)' }}>
-                  Select a category from the sidebar to manage racing data records based on your permissions.
-                </p>
               </div>
             </div>
           ) : (
@@ -321,11 +463,18 @@ function App() {
                 </div>
 
                 {/* ปุ่มเพิ่มข้อมูล จะเปลี่ยนข้อความตาม Tab ที่เปิดอยู่ */}
-                {canCreate && (
-                  <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
-                    <Plus size={16} /> Add Record
-                  </button>
-                )}
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  {canCreate && (
+                    <button className="btn-primary" onClick={() => {
+                      if (role === 'user' && teams.length === 1) {
+                        setFormData(prev => ({ ...prev, team_id: teams[0].team_id }));
+                      }
+                      setIsModalOpen(true);
+                    }}>
+                      <Plus size={16} /> Add Record
+                    </button>
+                  )}
+                </div>
               </div>
 
               {loading ? (
@@ -335,7 +484,7 @@ function App() {
               ) : (
                 <DataTable
                   columns={getColumns()}
-                  data={data}
+                  data={filteredData}
                   onDelete={handleDelete} // ส่ง handleDelete ไปจัดการในตาราง
                 />
               )}
@@ -347,11 +496,12 @@ function App() {
       {isModalOpen && (
         <div className="modal-backdrop">
           <div className="modal-surface">
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
-              <h3>Enrollment Registry - {activeTab}</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '700' }}>{activeTab} Registry</h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                className="icon-btn"
+                style={{ border: 'none', background: 'none' }}
               >
                 <X size={20} />
               </button>
@@ -470,9 +620,9 @@ function App() {
                     <option value="DSQ">DSQ</option>
                     <option value="DNS">DNS</option>
                   </select>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', color: 'var(--text-muted)' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem', marginBottom: '1rem', color: 'var(--text-main)', fontWeight: '600', cursor: 'pointer' }}>
                     <input type="checkbox" checked={formData.is_fastest_lap || false} onChange={e => setFormData({ ...formData, is_fastest_lap: e.target.checked })} />
-                    Fastest Lap
+                    Earned Fastest Lap Point
                   </label>
                 </>
               )}
@@ -488,9 +638,9 @@ function App() {
                   <input type="text" placeholder="Username" value={formData.username || ''} onChange={e => setFormData({ ...formData, username: e.target.value })} required />
                   <input type="password" placeholder="Password" value={formData.password_hash || ''} onChange={e => setFormData({ ...formData, password_hash: e.target.value })} required />
                   <select value={formData.role || 'user'} onChange={e => setFormData({ ...formData, role: e.target.value })} required>
-                    <option value="user">User</option>
-                    <option value="manager">Manager</option>
-                    <option value="admin">Admin</option>
+                    <option value="user">Racing Team (User)</option>
+                    <option value="manager">Race Owner (Manager)</option>
+                    <option value="admin">System Admin (Admin)</option>
                   </select>
                 </>
               )}
@@ -499,6 +649,50 @@ function App() {
                 Commit Registry
               </button>
             </form>
+          </div>
+        </div>
+      )}
+      {isPrintModalOpen && (
+        <div className="modal-backdrop">
+          <div className="modal-surface card" style={{ width: '500px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '700' }}>Report Configuration</h3>
+              <button onClick={() => setIsPrintModalOpen(false)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            
+            <p style={{ marginBottom: '1.5rem', color: 'var(--text-muted)' }}>Select the categories you wish to include in the formal report:</p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem' }}>
+              {getAllowedTabs().filter(t => t !== 'Dashboard' && t !== 'Manage Users').map(tab => (
+                <label key={tab} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '12px', background: 'var(--bg-main)', borderRadius: '10px', cursor: 'pointer' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={categoriesToPrint.includes(tab)}
+                    onChange={() => toggleCategory(tab)}
+                  />
+                  <span style={{ fontWeight: '600' }}>{tab} Directory</span>
+                </label>
+              ))}
+              {role === 'admin' && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '12px', background: 'var(--bg-main)', borderRadius: '10px', cursor: 'pointer' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={categoriesToPrint.includes('Manage Users')}
+                    onChange={() => toggleCategory('Manage Users')}
+                  />
+                  <span style={{ fontWeight: '600' }}>User Accounts Registry</span>
+                </label>
+              )}
+            </div>
+
+            <button 
+              className="btn-primary" 
+              style={{ width: '100%', padding: '15px' }}
+              onClick={handleGlobalPrint}
+              disabled={categoriesToPrint.length === 0}
+            >
+              <Printer size={18} style={{ marginRight: '8px' }} /> Generate Formal PDF Report
+            </button>
           </div>
         </div>
       )}

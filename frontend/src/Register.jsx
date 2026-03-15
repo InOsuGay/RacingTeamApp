@@ -8,7 +8,6 @@ function Register({ setShowRegister }) {
     password:"",
     confirmPassword:"",
     fullname:"",
-    email:"",
     role:"user"
   });
 
@@ -62,69 +61,88 @@ function Register({ setShowRegister }) {
 
   return(
 
-    <div style={{textAlign:"center",marginTop:"120px"}}>
+    <div className="modal-backdrop" style={{ background: 'var(--bg-main)' }}>
+      <div className="modal-surface card" style={{ width: '450px', textAlign: 'center', maxHeight: '90vh', overflowY: 'auto' }}>
+        <h2 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '1.5rem', color: 'var(--primary)', letterSpacing: '0.05em' }}>
+          CREATE ACCOUNT
+        </h2>
 
-      <h2>Create Account</h2>
+        <div style={{ textAlign: 'left', marginBottom: '1rem' }}>
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px', color: 'var(--text-main)' }}>
+              Username
+            </label>
+            <input
+              type="text"
+              name="username"
+              placeholder="Pick a unique username"
+              value={formData.username}
+              onChange={handleChange}
+              style={{ marginBottom: '0.5rem' }}
+            />
+          </div>
 
-      <input
-        type="text"
-        name="username"
-        placeholder="Username"
-        onChange={handleChange}
-      />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px', color: 'var(--text-main)' }}>
+                Password
+              </label>
+              <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleChange}
+                style={{ marginBottom: '0.5rem' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px', color: 'var(--text-main)' }}>
+                Confirm
+              </label>
+              <input
+                type="password"
+                name="confirmPassword"
+                placeholder="Confirm"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                style={{ marginBottom: '0.5rem' }}
+              />
+            </div>
+          </div>
 
-      <br/><br/>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px', color: 'var(--text-main)' }}>
+              Full Name
+            </label>
+            <input
+              type="text"
+              name="fullname"
+              placeholder="Your display name"
+              value={formData.fullname}
+              onChange={handleChange}
+              style={{ marginBottom: '0.5rem' }}
+            />
+          </div>
 
-      <input
-        type="password"
-        name="password"
-        placeholder="Password"
-        onChange={handleChange}
-      />
+          <button 
+            className="btn-primary" 
+            onClick={handleRegister}
+            style={{ width: '100%', padding: '14px' }}
+          >
+            Create System Identity
+          </button>
+        </div>
 
-      <br/><br/>
-
-      <input
-        type="password"
-        name="confirmPassword"
-        placeholder="Confirm Password"
-        onChange={handleChange}
-      />
-
-      <br/><br/>
-
-      <input
-        type="text"
-        name="fullname"
-        placeholder="Full Name"
-        onChange={handleChange}
-      />
-
-      <br/><br/>
-
-      <input
-        type="email"
-        name="email"
-        placeholder="Email"
-        onChange={handleChange}
-      />
-
-      <br/><br/>
-
-      
-
-      <br/><br/>
-
-      <button onClick={handleRegister}>
-        Register
-      </button>
-
-      <br/><br/>
-
-      <button onClick={()=>setShowRegister(false)}>
-        Back to Login
-      </button>
-
+        <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
+          <button 
+            onClick={()=>setShowRegister(false)}
+            style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: '600', cursor: 'pointer', fontSize: '0.9rem' }}
+          >
+            Return to Login
+          </button>
+        </div>
+      </div>
     </div>
 
   );

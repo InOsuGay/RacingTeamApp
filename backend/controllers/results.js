@@ -3,7 +3,8 @@ const { pool } = require('../config/db');
 // GET /api/results
 async function getAll(req, res, next) {
   try {
-    const [rows] = await pool.query(`
+    const { manager_id } = req.query;
+    let sql = `
       SELECT rr.*,
              d.first_name, d.last_name, d.driver_number,
              c.brand, c.model,
@@ -14,8 +15,15 @@ async function getAll(req, res, next) {
       LEFT JOIN Cars    c ON rr.car_id    = c.car_id
       LEFT JOIN Races   r ON rr.race_id   = r.race_id
       LEFT JOIN Teams   t ON d.team_id    = t.team_id
-      ORDER BY r.race_date ASC, rr.finish_position ASC
-    `);
+    `;
+    let params = [];
+    if (manager_id) {
+      sql += ' WHERE t.manager_id = ?';
+      params.push(manager_id);
+    }
+    sql += ' ORDER BY r.race_date ASC, rr.finish_position ASC';
+    
+    const [rows] = await pool.query(sql, params);
     res.json({ success: true, data: rows });
   } catch (err) { next(err); }
 }
