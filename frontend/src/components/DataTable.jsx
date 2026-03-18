@@ -27,11 +27,8 @@ const DataTable = ({ columns, data, onDelete, tabType }) => {
               ))}
               {onDelete && (
                 <td className="actions-cell">
-                  <button className="action-btn delete" onClick={() => onDelete(row)}>
-                    <Trash2 size={16} />
-                  </button>
-                  <button className="action-btn edit">
-                    <Edit3 size={16} />
+                  <button className="action-btn delete" onClick={() => onDelete(row)} title="Delete Record">
+                    <Trash2 size={18} />
                   </button>
                 </td>
               )}

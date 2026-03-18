@@ -8,11 +8,13 @@ baseURL: 'http://localhost:5000/api',
 GET DATA
 ====================== */
 
-export const getTeams = () => api.get('/teams');
-export const getDrivers = () => api.get('/drivers');
-export const getCars = () => api.get('/cars');
-export const getRaces = () => api.get('/races');
-export const getResults = () => api.get('/results');
+export const getTeams = (params) => api.get('/teams', { params });
+export const getDrivers = (params) => api.get('/drivers', { params });
+export const getCars = (params) => api.get('/cars', { params });
+export const getRaces = (params) => api.get('/races', { params });
+export const getResults = (params) => api.get('/results', { params });
+export const getUsers = () => api.get('/users');
+export const getSeasons = () => api.get('/seasons');
 
 /* ======================
 DRIVERS
@@ -53,5 +55,21 @@ RESULTS
 export const addResult = (data) => api.post('/results', data);
 export const deleteResult = (id) => api.delete(`/results/${id}`);
 export const updateResult = (id, data) => api.put(`/results/${id}`, data);
+
+/* ======================
+USERS
+====================== */
+
+export const addUser = (data) => api.post('/users', data);
+export const deleteUser = (id) => api.delete(`/users/${id}`);
+export const updateUser = (id, data) => api.put(`/users/${id}`, data);
+
+/* ======================
+SEASONS
+====================== */
+
+export const addSeason = (data) => api.post('/seasons', data);
+export const deleteSeason = (id) => api.delete(`/seasons/${id}`);
+export const updateSeason = (id, data) => api.put(`/seasons/${id}`, data);
 
 export default api;

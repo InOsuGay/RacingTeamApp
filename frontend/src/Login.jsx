@@ -1,13 +1,11 @@
 import axios from "axios";
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
-
-function Login({ setIsLogin, setShowRegister, setRole }) {   
+function Login({ setIsLogin, setShowRegister, setRole, setCurrentUser }) {   
 
   const [username,setUsername] = useState("");
   const [password,setPassword] = useState("");
-  const navigate = useNavigate();
+
   const handleLogin = async () => {
 
     if(username === "" || password === ""){
@@ -16,84 +14,68 @@ function Login({ setIsLogin, setShowRegister, setRole }) {
     }
 
     try{
-
-      const res = await axios.post(
-        "http://localhost:5000/api/login",
-        {
-          username:username,
-          password:password
-        }
-      );
+      const res = await axios.post("http://localhost:5000/api/users/login", { username, password });
 
       if(res.data.success){
+        const user = res.data.data;
 
-        alert("Login success");
-
-        setRole(res.data.role);   
-        setIsLogin(true);
-        
-if(res.data.role === "admin"){
-  navigate("/admin/dashboard");
-}
-
-if(res.data.role === "race_manager"){
-  navigate("/race/dashboard");
-}
-
-if(res.data.role === "team_manager"){
-  navigate("/team/dashboard");
-}
+        if (user) {
+          setRole(user.role);   
+          setCurrentUser(user); 
+          setIsLogin(true);
+        } else {
+          alert("Invalid username or password");
+        }
 
       }else{
-
         alert(res.data.message);
-
       }
 
     }catch(err){
-
       alert("Server error");
-
     }
-
   };
 
   return (
+    <div className="login-container">
+      <div className="login-card">
 
-    <div style={{textAlign:"center",marginTop:"150px"}}>
+        <h2 className="login-title">RACING MANAGEMENT</h2>
 
-      <h2>Login</h2>
+        <div className="form-group">
+          <label>Username</label>
+          <input
+            type="text"
+            placeholder="Enter username"
+            value={username}
+            onChange={(e)=>setUsername(e.target.value)}
+          />
+        </div>
 
-      <input
-        type="text"
-        placeholder="Username"
-        onChange={(e)=>setUsername(e.target.value)}
-      />
+        <div className="form-group">
+          <label>Password</label>
+          <input
+            type="password"
+            placeholder="Enter password"
+            value={password}
+            onChange={(e)=>setPassword(e.target.value)}
+          />
+        </div>
 
-      <br/><br/>
+        <button className="btn-primary" onClick={handleLogin}>
+          Login
+        </button>
 
-      <input
-        type="password"
-        placeholder="Password"
-        onChange={(e)=>setPassword(e.target.value)}
-      />
+        <button 
+          className="register-btn" 
+          onClick={()=>setShowRegister(true)}
+        >
+          Create System Account
+        </button>
 
-      <br/><br/>
-
-      <button onClick={handleLogin}>
-        Login
-      </button>
-
-      <br/><br/>
-
-      <button onClick={()=>setShowRegister(true)}>
-        Create Account
-      </button>
-
+      </div>
     </div>
-
   );
-
 }
 
 export default Login;
