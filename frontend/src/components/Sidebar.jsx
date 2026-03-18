@@ -1,24 +1,17 @@
 import React from 'react';
 import { 
   Users, 
-  Flag, 
   Car, 
   LayoutDashboard, 
-  MapPin, 
-  ListOrdered,
-  ShieldAlert
+  ListOrdered
 } from 'lucide-react';
 
-const Sidebar = ({ activeTab, setActiveTab, allowedTabs, user }) => {
+const Sidebar = ({ activeTab, setActiveTab, allowedTabs = [], user }) => {
   const menuItems = [
     { name: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-    { name: 'Teams', icon: <Flag size={20} /> },
     { name: 'Drivers', icon: <Users size={20} /> },
     { name: 'Cars', icon: <Car size={20} /> },
-    { name: 'Races', icon: <MapPin size={20} /> },
     { name: 'Results', icon: <ListOrdered size={20} /> },
-    { name: 'Manage Seasons', icon: <Flag size={20} /> },
-    { name: 'Manage Users', icon: <ShieldAlert size={20} /> },
   ];
 
   const getRoleLabel = (r) => {
@@ -39,15 +32,15 @@ const Sidebar = ({ activeTab, setActiveTab, allowedTabs, user }) => {
           {menuItems
             .filter(item => allowedTabs.includes(item.name))
             .map((item) => (
-            <li 
-              key={item.name}
-              className={`nav-item ${activeTab === item.name ? 'active' : ''}`}
-              onClick={() => setActiveTab(item.name)}
-            >
-              <span className="nav-icon">{item.icon}</span>
-              <span className="nav-label">{item.name}</span>
-            </li>
-          ))}
+              <li 
+                key={item.name}
+                className={`nav-item ${activeTab === item.name ? 'active' : ''}`}
+                onClick={() => setActiveTab(item.name)}
+              >
+                <span className="nav-icon">{item.icon}</span>
+                <span className="nav-label">{item.name}</span>
+              </li>
+            ))}
         </ul>
       </nav>
 
