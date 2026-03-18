@@ -23,6 +23,13 @@ function App() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  const [formData, setFormData] = useState({});
+
+  const [teams, setTeams] = useState([]);
+  const [driversList, setDriversList] = useState([]);
+  const [carsList, setCarsList] = useState([]);
+  const [racesList, setRacesList] = useState([]);
+
   const [stats, setStats] = useState({
     teams: 0,
     drivers: 0,
@@ -35,6 +42,7 @@ function App() {
     if (isLogin && currentUser) {
       fetchDashboardStats();
       loadTabData();
+      fetchLists();
     }
   }, [activeTab, isLogin, currentUser]);
 
@@ -59,6 +67,25 @@ function App() {
     }
   };
 
+  const fetchLists = async () => {
+    try {
+      const [t, d, c, r] = await Promise.all([
+        api.getTeams(),
+        api.getDrivers(),
+        api.getCars(),
+        api.getRaces()
+      ]);
+
+      setTeams(t.data.data);
+      setDriversList(d.data.data);
+      setCarsList(c.data.data);
+      setRacesList(r.data.data);
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const loadTabData = async () => {
     if (activeTab === 'Dashboard') return;
 
@@ -78,6 +105,24 @@ function App() {
     }
   };
 
+  // ================= CREATE =================
+  const handleCreate = async (e) => {
+    e.preventDefault();
+
+    try {
+      if (activeTab === 'Drivers') await api.addDriver(formData);
+      if (activeTab === 'Cars') await api.addCar(formData);
+      if (activeTab === 'Results') await api.addResult(formData);
+
+      setFormData({});
+      loadTabData();
+
+    } catch (err) {
+      alert("Create failed: " + err.message);
+    }
+  };
+
+  // ================= DELETE =================
   const handleDelete = async (row) => {
     if (!window.confirm('Delete this record?')) return;
 
@@ -98,38 +143,13 @@ function App() {
     setCurrentUser(null);
   };
 
-  const getColumns = (tab) => {
-    switch (tab) {
-      case 'Drivers':
-        return [
-          { header: 'ID', key: 'driver_id' },
-          { header: 'Name', render: r => `${r.first_name} ${r.last_name}` },
-          { header: 'Number', key: 'driver_number' },
-        ];
-      case 'Cars':
-        return [
-          { header: 'ID', key: 'car_id' },
-          { header: 'Brand', key: 'brand' },
-          { header: 'Model', key: 'model' },
-        ];
-      case 'Results':
-        return [
-          { header: 'ID', key: 'result_id' },
-          { header: 'Position', key: 'finish_position' },
-          { header: 'Points', key: 'points_earned' },
-        ];
-      default:
-        return [];
-    }
-  };
-
   const filteredData = data.filter(item =>
     Object.values(item).some(val =>
       String(val).toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
 
-  // ================= LOGIN CHECK (ต้องอยู่ล่างสุดก่อน return) =================
+  // ================= LOGIN =================
   if (!isLogin) {
     if (showRegister) {
       return <Register setShowRegister={setShowRegister} />;
@@ -177,8 +197,10 @@ function App() {
             <Drivers
               data={filteredData}
               loading={loading}
-              getColumns={getColumns}
-              handleDelete={handleDelete}
+              teams={teams}
+              handleCreate={handleCreate}
+              formData={formData}
+              setFormData={setFormData}
             />
           )}
 
@@ -186,8 +208,10 @@ function App() {
             <Cars
               data={filteredData}
               loading={loading}
-              getColumns={getColumns}
-              handleDelete={handleDelete}
+              teams={teams}
+              handleCreate={handleCreate}
+              formData={formData}
+              setFormData={setFormData}
             />
           )}
 
@@ -195,8 +219,12 @@ function App() {
             <Results
               data={filteredData}
               loading={loading}
-              getColumns={getColumns}
-              handleDelete={handleDelete}
+              racesList={racesList}
+              driversList={driversList}
+              carsList={carsList}
+              handleCreate={handleCreate}
+              formData={formData}
+              setFormData={setFormData}
             />
           )}
 

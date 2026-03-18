@@ -1,8 +1,21 @@
-import React from "react";
+import React, { useState } from "react";
+import CarModal from "../modals/CarModal";
 
-function Cars({ data, loading }) {
+function Cars({
+  data,
+  loading,
+  teams,
+  handleCreate,
+  formData,
+  setFormData
+}) {
+
+  const [showPopup, setShowPopup] = useState(false);
+
   return (
     <div>
+
+      {/* HEADER */}
       <div className="page-header">
         <div>
           <div className="page-title">Cars</div>
@@ -10,8 +23,14 @@ function Cars({ data, loading }) {
             {data.length} total cars
           </div>
         </div>
+
+        {/* ✅ ปุ่ม Add */}
+        <button className="add-btn" onClick={() => setShowPopup(true)}>
+          + Add Record
+        </button>
       </div>
 
+      {/* TABLE */}
       <div className="card table-card">
         {loading ? (
           <div className="empty-state">Loading...</div>
@@ -42,6 +61,22 @@ function Cars({ data, loading }) {
           </table>
         )}
       </div>
+
+      {/* ✅ POPUP */}
+      {showPopup && (
+        <CarModal
+          onClose={() => setShowPopup(false)}
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleCreate(e);
+            setShowPopup(false);
+          }}
+          formData={formData}
+          setFormData={setFormData}
+          teams={teams}
+        />
+      )}
+
     </div>
   );
 }

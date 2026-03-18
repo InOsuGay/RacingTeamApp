@@ -1,8 +1,21 @@
-import React from "react";
+import React, { useState } from "react";
+import DriverModal from "../modals/DriverModal";
 
-function Drivers({ data, loading }) {
+function Drivers({
+  data,
+  loading,
+  teams,
+  handleCreate,
+  formData,
+  setFormData
+}) {
+
+  const [showPopup, setShowPopup] = useState(false);
+
   return (
     <div>
+
+      {/* HEADER */}
       <div className="page-header">
         <div>
           <div className="page-title">Drivers</div>
@@ -10,8 +23,14 @@ function Drivers({ data, loading }) {
             {data.length} total drivers
           </div>
         </div>
+
+        {/* ✅ ปุ่ม Add */}
+        <button className="add-btn" onClick={() => setShowPopup(true)}>
+          + Add Record
+        </button>
       </div>
 
+      {/* TABLE */}
       <div className="card table-card">
         {loading ? (
           <div className="empty-state">Loading...</div>
@@ -41,6 +60,22 @@ function Drivers({ data, loading }) {
           </table>
         )}
       </div>
+
+      {/* ✅ POPUP MODAL */}
+      {showPopup && (
+        <DriverModal
+          onClose={() => setShowPopup(false)}
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleCreate(e);
+            setShowPopup(false);
+          }}
+          formData={formData}
+          setFormData={setFormData}
+          teams={teams}
+        />
+      )}
+
     </div>
   );
 }

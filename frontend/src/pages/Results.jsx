@@ -1,8 +1,23 @@
-import React from "react";
+import React, { useState } from "react";
+import ResultModal from "../modals/ResultModal";
 
-function Results({ data, loading }) {
+function Results({
+  data,
+  loading,
+  racesList,
+  driversList,
+  carsList,
+  handleCreate,
+  formData,
+  setFormData
+}) {
+
+  const [showPopup, setShowPopup] = useState(false);
+
   return (
     <div>
+
+      {/* HEADER */}
       <div className="page-header">
         <div>
           <div className="page-title">Results</div>
@@ -10,8 +25,14 @@ function Results({ data, loading }) {
             {data.length} race results
           </div>
         </div>
+
+        {/* ✅ ปุ่ม Add */}
+        <button className="add-btn" onClick={() => setShowPopup(true)}>
+          + Add Record
+        </button>
       </div>
 
+      {/* TABLE */}
       <div className="card table-card">
         {loading ? (
           <div className="empty-state">Loading...</div>
@@ -42,6 +63,24 @@ function Results({ data, loading }) {
           </table>
         )}
       </div>
+
+      {/* ✅ POPUP */}
+      {showPopup && (
+        <ResultModal
+          onClose={() => setShowPopup(false)}
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleCreate(e);
+            setShowPopup(false);
+          }}
+          formData={formData}
+          setFormData={setFormData}
+          racesList={racesList}
+          driversList={driversList}
+          carsList={carsList}
+        />
+      )}
+
     </div>
   );
 }
