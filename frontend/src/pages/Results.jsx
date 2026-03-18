@@ -14,11 +14,48 @@ function Results({
 
   const [showPopup, setShowPopup] = useState(false);
 
+  const emptyForm = {
+    race_id: "",
+    driver_id: "",
+    car_id: "",
+    finish_position: ""
+  };
+
+  /* Button Styles */
+  const editButtonStyle = {
+    backgroundColor: "#2563eb",
+    color: "white",
+    border: "none",
+    padding: "6px 14px",
+    borderRadius: "6px",
+    cursor: "pointer"
+  };
+
+  const deleteButtonStyle = {
+    backgroundColor: "#ef4444",
+    color: "white",
+    border: "none",
+    padding: "6px 14px",
+    borderRadius: "6px",
+    cursor: "pointer"
+  };
+
+  const openModal = () => {
+    setFormData(emptyForm);
+    setShowPopup(true);
+  };
+
+  const closeModal = () => {
+    setShowPopup(false);
+    setFormData(emptyForm);
+  };
+
   return (
     <div>
 
-      {/* HEADER */}
+      {/* Header */}
       <div className="page-header">
+
         <div>
           <div className="page-title">Results</div>
           <div className="page-subtitle">
@@ -26,52 +63,111 @@ function Results({
           </div>
         </div>
 
-        {/* ✅ ปุ่ม Add */}
-        <button className="add-btn" onClick={() => setShowPopup(true)}>
-          + Add Record
+        <button
+          className="add-btn"
+          onClick={openModal}
+        >
+          ADD RECORD
         </button>
+
       </div>
 
-      {/* TABLE */}
+      {/* Results Table */}
       <div className="card table-card">
+
         {loading ? (
-          <div className="empty-state">Loading...</div>
+
+          <div className="empty-state">
+            Loading...
+          </div>
+
         ) : data.length === 0 ? (
+
           <div className="empty-state">
             <h3>No results found</h3>
           </div>
+
         ) : (
+
           <table className="table-modern">
+
             <thead>
               <tr>
                 <th>Race</th>
+                <th>Team</th>
                 <th>Driver</th>
                 <th>Position</th>
                 <th>Points</th>
+                <th>Actions</th>
               </tr>
             </thead>
+
             <tbody>
-              {data.map((r) => (
-                <tr key={r.result_id}>
-                  <td>{r.race_name}</td>
-                  <td>{r.first_name} {r.last_name}</td>
-                  <td>P{r.finish_position}</td>
-                  <td>{r.points_earned}</td>
+
+              {data.map((result) => (
+
+                <tr key={result.result_id}>
+
+                  <td>{result.race_name}</td>
+
+                  <td>{result.team_name}</td>
+
+                  <td>
+                    {result.first_name} {result.last_name}
+                  </td>
+
+                  <td>P{result.finish_position}</td>
+
+                  <td>{result.points_earned}</td>
+
+                  {/* Action Buttons */}
+                  <td>
+
+                    <div style={{ display: "flex", gap: "10px" }}>
+
+                      <button
+                        style={editButtonStyle}
+                        onClick={() =>
+                          alert(`Edit result ID: ${result.result_id}`)
+                        }
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        style={deleteButtonStyle}
+                        onClick={() =>
+                          alert(`Delete result ID: ${result.result_id}`)
+                        }
+                      >
+                        Delete
+                      </button>
+
+                    </div>
+
+                  </td>
+
                 </tr>
+
               ))}
+
             </tbody>
+
           </table>
+
         )}
+
       </div>
 
-      {/* ✅ POPUP */}
+      {/* Add Result Modal */}
       {showPopup && (
+
         <ResultModal
-          onClose={() => setShowPopup(false)}
+          onClose={closeModal}
           onSubmit={(e) => {
             e.preventDefault();
             handleCreate(e);
-            setShowPopup(false);
+            closeModal();
           }}
           formData={formData}
           setFormData={setFormData}
@@ -79,6 +175,7 @@ function Results({
           driversList={driversList}
           carsList={carsList}
         />
+
       )}
 
     </div>

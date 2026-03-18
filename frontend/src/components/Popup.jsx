@@ -17,11 +17,17 @@ function Popup({ title, children, onClose, onSubmit }) {
 
         {/* Form */}
         <form onSubmit={onSubmit}>
+
+          {/* Form Content */}
           {children}
 
-          <button className="btn-primary">
-            Commit Registry
-          </button>
+          {/* Submit Button (Right Side) */}
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "16px" }}>
+            <button className="btn-primary">
+              Commit Registry
+            </button>
+          </div>
+
         </form>
 
       </div>

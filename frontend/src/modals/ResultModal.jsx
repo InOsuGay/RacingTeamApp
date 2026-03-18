@@ -12,6 +12,7 @@ function ResultModal({
   return (
     <Popup title="Results Registry" onClose={onClose} onSubmit={onSubmit}>
 
+      {/* Race */}
       <select
         value={formData.race_id || ""}
         onChange={(e) =>
@@ -19,13 +20,14 @@ function ResultModal({
         }
       >
         <option value="">Select Race</option>
-        {racesList.map(r => (
-          <option key={r.race_id} value={r.race_id}>
-            {r.race_name}
+        {racesList.map((race) => (
+          <option key={race.race_id} value={race.race_id}>
+            {race.race_name}
           </option>
         ))}
       </select>
 
+      {/* Driver */}
       <select
         value={formData.driver_id || ""}
         onChange={(e) =>
@@ -33,13 +35,14 @@ function ResultModal({
         }
       >
         <option value="">Select Driver</option>
-        {driversList.map(d => (
-          <option key={d.driver_id} value={d.driver_id}>
-            {d.first_name} {d.last_name}
+        {driversList.map((driver) => (
+          <option key={driver.driver_id} value={driver.driver_id}>
+            {driver.first_name} {driver.last_name}
           </option>
         ))}
       </select>
 
+      {/* Car */}
       <select
         value={formData.car_id || ""}
         onChange={(e) =>
@@ -47,30 +50,27 @@ function ResultModal({
         }
       >
         <option value="">Select Car</option>
-        {carsList.map(c => (
-          <option key={c.car_id} value={c.car_id}>
-            {c.brand}
+        {carsList.map((car) => (
+          <option key={car.car_id} value={car.car_id}>
+            {car.brand}
           </option>
         ))}
       </select>
 
-      <input
-        type="number"
-        placeholder="Finish Position"
+      {/* Finish Position */}
+      <select
         value={formData.finish_position || ""}
         onChange={(e) =>
           setFormData({ ...formData, finish_position: e.target.value })
         }
-      />
-
-      <input
-        type="number"
-        placeholder="Points Earned"
-        value={formData.points_earned || ""}
-        onChange={(e) =>
-          setFormData({ ...formData, points_earned: e.target.value })
-        }
-      />
+      >
+        <option value="">Select Finish Position</option>
+        {[...Array(20)].map((_, i) => (
+          <option key={i + 1} value={i + 1}>
+            {i + 1}
+          </option>
+        ))}
+      </select>
 
     </Popup>
   );
