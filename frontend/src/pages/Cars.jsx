@@ -6,11 +6,14 @@ function Cars({
   loading,
   teams,
   handleCreate,
+  handleDelete,
+  handleUpdate,
   formData,
   setFormData
 }) {
 
   const [showPopup, setShowPopup] = useState(false);
+  const [editData, setEditData] = useState(null);
 
   return (
     <div>
@@ -24,8 +27,14 @@ function Cars({
           </div>
         </div>
 
-        {/* ✅ ปุ่ม Add */}
-        <button className="add-btn" onClick={() => setShowPopup(true)}>
+        <button
+          className="add-btn"
+          onClick={() => {
+            setEditData(null);
+            setFormData({});
+            setShowPopup(true);
+          }}
+        >
           + Add Record
         </button>
       </div>
@@ -42,19 +51,54 @@ function Cars({
           <table className="table-modern">
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Brand</th>
                 <th>Model</th>
                 <th>Number</th>
+                <th>Team</th>     {/* 🔥 เพิ่ม */}
+                <th>Specs</th>    {/* 🔥 เพิ่ม */}
+                <th>Actions</th>  {/* 🔥 เพิ่ม */}
               </tr>
             </thead>
+
             <tbody>
               {data.map((c) => (
                 <tr key={c.car_id}>
-                  <td>{c.car_id}</td>
                   <td>{c.brand}</td>
-                  <td>{c.model}</td>
-                  <td>{c.car_number}</td>
+                  <td>{c.model || "-"}</td>
+                  <td>{c.car_number || "-"}</td>
+                  <td>{c.team_name || "-"}</td>
+                  <td>{c.specs || "-"}</td>
+
+                  <td>
+                    {/* EDIT */}
+                    <button
+                      onClick={() => {
+                        setEditData(c);
+                        setFormData({
+                          brand: c.brand,
+                          model: c.model,
+                          car_number: c.car_number,
+                          specs: c.specs,
+                          team_id: c.team_id
+                        });
+                        setShowPopup(true);
+                      }}
+                    >
+                      Edit
+                    </button>
+
+                    {/* DELETE */}
+                    <button
+                      onClick={() => {
+                        if (window.confirm("Delete this car?")) {
+                          handleDelete(c);
+                        }
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </td>
+
                 </tr>
               ))}
             </tbody>
@@ -62,18 +106,25 @@ function Cars({
         )}
       </div>
 
-      {/* ✅ POPUP */}
+      {/* MODAL */}
       {showPopup && (
         <CarModal
           onClose={() => setShowPopup(false)}
           onSubmit={(e) => {
             e.preventDefault();
-            handleCreate(e);
+
+            if (editData) {
+              handleUpdate(editData.car_id, formData); // 🔥 update
+            } else {
+              handleCreate(e);
+            }
+
             setShowPopup(false);
           }}
           formData={formData}
           setFormData={setFormData}
           teams={teams}
+          isEdit={!!editData}
         />
       )}
 
