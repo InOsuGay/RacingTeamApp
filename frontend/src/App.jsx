@@ -24,6 +24,8 @@ function App() {
   const [loading, setLoading] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editId, setEditId] = useState(null);
 
   const [formData, setFormData] = useState({
     first_name: '', last_name: '', driver_number: '', team_id: '',
@@ -38,6 +40,7 @@ function App() {
   const [carsList, setCarsList] = useState([]);
   const [racesList, setRacesList] = useState([]);
   const [seasonsList, setSeasonsList] = useState([]);
+  const [usersList, setUsersList] = useState([]);
 
   //  Dashboard Stats
   const [stats, setStats] = useState({
@@ -98,7 +101,8 @@ function App() {
         api.getDrivers(params),
         api.getCars(params),
         api.getRaces(params),
-        api.getSeasons?.() || { data: { data: [] } }
+        api.getSeasons?.() || { data: { data: [] } },
+        api.getUsers?.() || { data: { data: [] } }
       ]);
 
       setTeams(teamsRes.data.data);
@@ -106,6 +110,7 @@ function App() {
       setCarsList(carsRes.data.data);
       setRacesList(racesRes.data.data);
       setSeasonsList(seasonsRes.data.data || []);
+      setUsersList(usersRes.data.data || []);
 
       setStats({
         teams: teamsRes.data.data.length,
@@ -180,18 +185,53 @@ function App() {
     }
   };
 
+  const handleEdit = async (row) => {
+    let idFieldName = '';
+    if (activeTab === 'Drivers') idFieldName = 'driver_id';
+    else if (activeTab === 'Teams') idFieldName = 'team_id';
+    else if (activeTab === 'Cars') idFieldName = 'car_id';
+    else if (activeTab === 'Races') idFieldName = 'race_id';
+    else if (activeTab === 'Results') idFieldName = 'result_id';
+    else if (activeTab === 'Manage Users') idFieldName = 'user_id';
+    else if (activeTab === 'Manage Seasons') idFieldName = 'season_id';
+
+    setEditId(row[idFieldName]);
+    setIsEditMode(true);
+    setFormData({ ...row });
+    
+    if (activeTab === 'Teams') {
+       try {
+         const res = await api.getUsers();
+         setUsersList(res.data.data || []);
+       } catch (err) { console.error(err); }
+    }
+    setIsModalOpen(true);
+  };
+
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      if (activeTab === 'Drivers') await api.addDriver(formData);
-      if (activeTab === 'Teams') await api.addTeam(formData);
-      if (activeTab === 'Cars') await api.addCar(formData);
-      if (activeTab === 'Races') await api.addRace(formData);
-      if (activeTab === 'Results') await api.addResult(formData);
-      if (activeTab === 'Manage Users') await api.addUser(formData);
-      if (activeTab === 'Manage Seasons') await api.addSeason(formData);
+      if (isEditMode) {
+        if (activeTab === 'Drivers') await api.updateDriver(editId, formData);
+        if (activeTab === 'Teams') await api.updateTeam(editId, formData);
+        if (activeTab === 'Cars') await api.updateCar(editId, formData);
+        if (activeTab === 'Races') await api.updateRace(editId, formData);
+        if (activeTab === 'Results') await api.updateResult(editId, formData);
+        if (activeTab === 'Manage Users') await api.updateUser(editId, formData);
+        if (activeTab === 'Manage Seasons') await api.updateSeason(editId, formData);
+      } else {
+        if (activeTab === 'Drivers') await api.addDriver(formData);
+        if (activeTab === 'Teams') await api.addTeam(formData);
+        if (activeTab === 'Cars') await api.addCar(formData);
+        if (activeTab === 'Races') await api.addRace(formData);
+        if (activeTab === 'Results') await api.addResult(formData);
+        if (activeTab === 'Manage Users') await api.addUser(formData);
+        if (activeTab === 'Manage Seasons') await api.addSeason(formData);
+      }
       
       setIsModalOpen(false);
+      setIsEditMode(false);
+      setEditId(null);
       setFormData({ 
         first_name: '', last_name: '', driver_number: '', team_id: '',
         name: '', contact_info: '', manager_id: '',
@@ -465,10 +505,26 @@ function App() {
                 {/* ปุ่มเพิ่มข้อมูล จะเปลี่ยนข้อความตาม Tab ที่เปิดอยู่ */}
                 <div style={{ display: 'flex', gap: '1rem' }}>
                   {canCreate && (
-                    <button className="btn-primary" onClick={() => {
+                    <button className="btn-primary" onClick={async () => {
+                      try {
+                        const res = await api.getUsers();
+                        setUsersList(res.data.data || []);
+                      } catch (err) {
+                        console.error("Failed to fetch users", err);
+                      }
                       if (role === 'user' && teams.length === 1) {
                         setFormData(prev => ({ ...prev, team_id: teams[0].team_id }));
                       }
+                      setIsEditMode(false);
+                      setEditId(null);
+                      setFormData({ 
+                        first_name: '', last_name: '', driver_number: '', team_id: '',
+                        name: '', contact_info: '', manager_id: '',
+                        brand: '', model: '', car_number: '', specs: '',
+                        season_id: '', race_name: '', location: '', race_date: '', total_laps: '',
+                        race_id: '', driver_id: '', car_id: '', finish_position: '', is_fastest_lap: false, status: 'Finished', points_earned: '',
+                        year: '', username: '', password_hash: '', role: 'user'
+                      });
                       setIsModalOpen(true);
                     }}>
                       <Plus size={16} /> Add Record
@@ -485,7 +541,8 @@ function App() {
                 <DataTable
                   columns={getColumns()}
                   data={filteredData}
-                  onDelete={handleDelete} // ส่ง handleDelete ไปจัดการในตาราง
+                  onDelete={handleDelete}
+                  onEdit={handleEdit}
                 />
               )}
             </div>
@@ -497,7 +554,7 @@ function App() {
         <div className="modal-backdrop">
           <div className="modal-surface">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: '700' }}>{activeTab} Registry</h3>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '700' }}>{isEditMode ? 'Modify' : 'New'} Registry Entry</h3>
               <button
                 onClick={() => setIsModalOpen(false)}
                 className="icon-btn"
@@ -561,14 +618,19 @@ function App() {
                     value={formData.contact_info || ''}
                     onChange={e => setFormData({ ...formData, contact_info: e.target.value })}
                   />
-                  {role === 'admin' && (
-                    <input
-                      type="number"
-                      placeholder="Manager ID"
-                      value={formData.manager_id || ''}
-                      onChange={e => setFormData({ ...formData, manager_id: e.target.value })}
-                    />
-                  )}
+                  <select
+                    value={formData.manager_id || ''}
+                    onChange={e => setFormData({ ...formData, manager_id: e.target.value })}
+                  >
+                    <option value="">Select Manager (System User)</option>
+                    {usersList
+                      .filter(u => u.role === 'user' && !teams.some(t => t.manager_id === u.user_id))
+                      .map(u => (
+                        <option key={u.user_id} value={u.user_id}>
+                          {u.username}
+                        </option>
+                      ))}
+                  </select>
                 </>
               )}
 
@@ -646,7 +708,7 @@ function App() {
               )}
               
               <button type="submit" className="btn-primary" style={{marginTop: '1rem'}}>
-                Commit Registry
+                {isEditMode ? 'Save Changes' : 'Commit Registry'}
               </button>
             </form>
           </div>

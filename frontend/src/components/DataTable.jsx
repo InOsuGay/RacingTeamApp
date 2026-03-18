@@ -1,7 +1,7 @@
 import React from 'react';
 import { Trash2, Edit3 } from 'lucide-react';
 
-const DataTable = ({ columns, data, onDelete, tabType }) => {
+const DataTable = ({ columns, data, onDelete, onEdit, tabType }) => {
   if (!data || data.length === 0) {
     return <div className="empty-state">No records found in the database.</div>;
   }
@@ -14,7 +14,7 @@ const DataTable = ({ columns, data, onDelete, tabType }) => {
             {columns.map((col, idx) => (
               <th key={idx}>{col.header}</th>
             ))}
-            {onDelete && <th>Actions</th>}
+            {(onDelete || onEdit) && <th>Actions</th>}
           </tr>
         </thead>
         <tbody>
@@ -25,11 +25,20 @@ const DataTable = ({ columns, data, onDelete, tabType }) => {
                   {col.render ? col.render(row) : row[col.key]}
                 </td>
               ))}
-              {onDelete && (
+              {(onDelete || onEdit) && (
                 <td className="actions-cell">
-                  <button className="action-btn delete" onClick={() => onDelete(row)} title="Delete Record">
-                    <Trash2 size={18} />
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {onEdit && (
+                      <button className="action-btn edit" onClick={() => onEdit(row)} title="Edit Record">
+                        <Edit3 size={18} />
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button className="action-btn delete" onClick={() => onDelete(row)} title="Delete Record">
+                        <Trash2 size={18} />
+                      </button>
+                    )}
+                  </div>
                 </td>
               )}
             </tr>
