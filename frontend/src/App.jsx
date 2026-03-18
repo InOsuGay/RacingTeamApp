@@ -96,27 +96,32 @@ function App() {
     try {
       const params = role === 'user' ? { manager_id: currentUser.user_id } : {};
 
-      const [teamsRes, driversRes, carsRes, racesRes, seasonsRes] = await Promise.all([
-        api.getTeams(params),
-        api.getDrivers(params),
-        api.getCars(params),
-        api.getRaces(params),
-        api.getSeasons?.() || { data: { data: [] } },
-        api.getUsers?.() || { data: { data: [] } }
+      const [teamsRes, driversRes, carsRes, racesRes, seasonsRes, usersRes] = await Promise.all([
+        api.getTeams(params).catch(() => ({ data: { data: [] } })),
+        api.getDrivers(params).catch(() => ({ data: { data: [] } })),
+        api.getCars(params).catch(() => ({ data: { data: [] } })),
+        api.getRaces(params).catch(() => ({ data: { data: [] } })),
+        (api.getSeasons?.() || Promise.resolve({ data: { data: [] } })).catch(() => ({ data: { data: [] } })),
+        (api.getUsers?.() || Promise.resolve({ data: { data: [] } })).catch(() => ({ data: { data: [] } }))
       ]);
 
-      setTeams(teamsRes.data.data);
-      setDriversList(driversRes.data.data);
-      setCarsList(carsRes.data.data);
-      setRacesList(racesRes.data.data);
+      const teamsData = teamsRes.data.data || [];
+      const driversData = driversRes.data.data || [];
+      const carsData = carsRes.data.data || [];
+      const racesData = racesRes.data.data || [];
+
+      setTeams(teamsData);
+      setDriversList(driversData);
+      setCarsList(carsData);
+      setRacesList(racesData);
       setSeasonsList(seasonsRes.data.data || []);
       setUsersList(usersRes.data.data || []);
 
       setStats({
-        teams: teamsRes.data.data.length,
-        drivers: driversRes.data.data.length,
-        cars: carsRes.data.data.length,
-        races: racesRes.data.data.length
+        teams: teamsData.length,
+        drivers: driversData.length,
+        cars: carsData.length,
+        races: racesData.length
       });
     } catch(err) {
       console.error("Dashboard load failed", err);
@@ -179,6 +184,8 @@ function App() {
         if (activeTab === 'Manage Users') await api.deleteUser(row.user_id);
         if (activeTab === 'Manage Seasons') await api.deleteSeason(row.season_id);
         loadTabData();
+        fetchTeams(); 
+        fetchDashboardStats();
       } catch (err) {
         alert('Deletion failed: ' + err.message);
       }
@@ -624,7 +631,7 @@ function App() {
                   >
                     <option value="">Select Manager (System User)</option>
                     {usersList
-                      .filter(u => u.role === 'user' && !teams.some(t => t.manager_id === u.user_id))
+                      .filter(u => u.role === 'user' && (!teams.some(t => t.manager_id === u.user_id) || (isEditMode && u.user_id === formData.manager_id)))
                       .map(u => (
                         <option key={u.user_id} value={u.user_id}>
                           {u.username}
@@ -695,10 +702,16 @@ function App() {
                 </>
               )}
 
-              {activeTab === 'Manage Users' && (
+               {activeTab === 'Manage Users' && (
                 <>
                   <input type="text" placeholder="Username" value={formData.username || ''} onChange={e => setFormData({ ...formData, username: e.target.value })} required />
-                  <input type="password" placeholder="Password" value={formData.password_hash || ''} onChange={e => setFormData({ ...formData, password_hash: e.target.value })} required />
+                  <input 
+                    type="password" 
+                    placeholder={isEditMode ? "Leave empty to keep current password" : "Password"} 
+                    value={formData.password_hash || ''} 
+                    onChange={e => setFormData({ ...formData, password_hash: e.target.value })} 
+                    required={!isEditMode} 
+                  />
                   <select value={formData.role || 'user'} onChange={e => setFormData({ ...formData, role: e.target.value })} required>
                     <option value="user">Racing Team (User)</option>
                     <option value="manager">Race Owner (Manager)</option>
