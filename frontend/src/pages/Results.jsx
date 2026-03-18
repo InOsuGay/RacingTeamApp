@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import ResultModal from "../modals/ResultModal";
 
 function Results({
@@ -6,122 +6,71 @@ function Results({
   loading,
   racesList,
   driversList,
-  carsList,
+  teams,
   handleCreate,
+  handleDelete,
+  handleUpdate,
   formData,
   setFormData
 }) {
 
   const [showPopup, setShowPopup] = useState(false);
-  const [results, setResults] = useState([]);
-
-  useEffect(() => {
-    setResults(data);
-  }, [data]);
+  const [editData, setEditData] = useState(null);
 
   const emptyForm = {
     race_id: "",
     driver_id: "",
-    car_id: "",
-    finish_position: ""
+    team_id: "",
+    finish_position: "",
+    points_earned: ""
   };
 
-  /* Delete result */
-  const handleDelete = async (id) => {
-
-    const confirmDelete = window.confirm("Delete this result?");
-    if (!confirmDelete) return;
-
-    try {
-
-      const res = await fetch(`http://localhost:3000/api/results/${id}`, {
-        method: "DELETE"
-      });
-
-      if (!res.ok) {
-        throw new Error("Delete failed");
-      }
-
-      // remove row from table
-      setResults(results.filter(r => r.result_id !== id));
-
-    } catch (error) {
-
-      console.error("Delete error:", error);
-
-    }
-  };
-
-  /* Button styles */
-  const editButtonStyle = {
-    backgroundColor: "#2563eb",
-    color: "white",
-    border: "none",
-    padding: "6px 14px",
-    borderRadius: "6px",
-    cursor: "pointer"
-  };
-
-  const deleteButtonStyle = {
-    backgroundColor: "#ef4444",
-    color: "white",
-    border: "none",
-    padding: "6px 14px",
-    borderRadius: "6px",
-    cursor: "pointer"
-  };
-
-  const openModal = () => {
+  const openCreate = () => {
+    setEditData(null);
     setFormData(emptyForm);
     setShowPopup(true);
   };
 
-  const closeModal = () => {
-    setShowPopup(false);
-    setFormData(emptyForm);
+  const openEdit = (r) => {
+    setEditData(r);
+
+    setFormData({
+      race_id: r.race_id,
+      driver_id: r.driver_id,
+      team_id: r.team_id,
+      finish_position: r.finish_position,
+      points_earned: r.points_earned
+    });
+
+    setShowPopup(true);
   };
 
   return (
     <div>
 
-      {/* Header */}
+      {/* HEADER */}
       <div className="page-header">
-
         <div>
           <div className="page-title">Results</div>
-          <div className="page-subtitle">
-            {results.length} race results
-          </div>
+          <div className="page-subtitle">{data?.length || 0} results</div>
         </div>
 
-        <button
-          className="add-btn"
-          onClick={openModal}
-        >
-          ADD RECORD
+        <button className="add-btn" onClick={openCreate}>
+          + Add Record
         </button>
-
       </div>
 
-      {/* Results Table */}
+      {/* TABLE */}
       <div className="card table-card">
 
         {loading ? (
-
-          <div className="empty-state">
-            Loading...
-          </div>
-
-        ) : results.length === 0 ? (
-
+          <div className="empty-state">Loading...</div>
+        ) : (data || []).length === 0 ? (
           <div className="empty-state">
             <h3>No results found</h3>
           </div>
-
         ) : (
-
           <table className="table-modern">
-
             <thead>
               <tr>
                 <th>Race</th>
@@ -134,76 +83,48 @@ function Results({
             </thead>
 
             <tbody>
-
-              {results.map((result) => (
-
-                <tr key={result.result_id}>
-
-                  <td>{result.race_name}</td>
-
-                  <td>{result.team_name}</td>
-
-                  <td>
-                    {result.first_name} {result.last_name}
-                  </td>
-
-                  <td>P{result.finish_position}</td>
-
-                  <td>{result.points_earned}</td>
+              {(data || []).map((r) => (
+                <tr key={r.result_id}>
+                  <td>{r.race_name}</td>
+                  <td>{r.team_name}</td>
+                  <td>{r.first_name} {r.last_name}</td>
+                  <td>P{r.finish_position}</td>
+                  <td>{r.points_earned}</td>
 
                   <td>
-
-                    <div style={{ display: "flex", gap: "10px" }}>
-
-                      <button
-                        style={editButtonStyle}
-                        onClick={() =>
-                          alert(`Edit result ID: ${result.result_id}`)
-                        }
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        style={deleteButtonStyle}
-                        onClick={() => handleDelete(result.result_id)}
-                      >
-                        Delete
-                      </button>
-
-                    </div>
-
+                    <button onClick={() => openEdit(r)}>Edit</button>
+                    <button onClick={() => handleDelete(r)}>Delete</button>
                   </td>
-
                 </tr>
-
               ))}
-
             </tbody>
 
           </table>
-
         )}
 
       </div>
 
-      {/* Modal */}
+      {/* MODAL */}
       {showPopup && (
-
         <ResultModal
-          onClose={closeModal}
+          onClose={() => setShowPopup(false)}
           onSubmit={(e) => {
             e.preventDefault();
-            handleCreate(e);
-            closeModal();
+
+            if (editData) {
+              handleUpdate(editData.result_id, formData);
+            } else {
+              handleCreate(e); // ✅ ยังใช้ได้
+            }
+
+            setShowPopup(false);
           }}
           formData={formData}
           setFormData={setFormData}
           racesList={racesList}
+          teams={teams}
           driversList={driversList}
-          carsList={carsList}
         />
-
       )}
 
     </div>

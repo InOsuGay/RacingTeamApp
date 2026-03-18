@@ -18,6 +18,7 @@ import ManageSeasons from "./pages/ManageSeasons";
 import './index.css';
 
 function App() {
+
   const [isLogin, setIsLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [role, setRole] = useState(null);
@@ -30,10 +31,11 @@ function App() {
   const [formData, setFormData] = useState({});
 
   const [teams, setTeams] = useState([]);
+  const [users, setUsers] = useState([]);
   const [driversList, setDriversList] = useState([]);
   const [carsList, setCarsList] = useState([]);
   const [racesList, setRacesList] = useState([]);
-  const [seasons, setSeasons] = useState([]); // 🔥 เพิ่ม
+  const [seasons, setSeasons] = useState([]);
 
   const [stats, setStats] = useState({
     teams: 0,
@@ -42,16 +44,25 @@ function App() {
     races: 0
   });
 
+  // ================= 🔥 หา team ของ user =================
+  const getMyTeamIds = () => {
+    if (!currentUser) return [];
+
+    return teams
+      .filter(t => t.manager_id === currentUser.user_id)
+      .map(t => t.team_id);
+  };
+
   // ================= ROLE =================
   const getAllowedTabs = () => {
     if (role === "admin") {
       return ["Dashboard", "Manage Users", "Manage Teams", "Manage Seasons", "Drivers", "Cars", "Races", "Leaderboard", "Results"];
     }
     if (role === "manager") {
-      return ["Dashboard", "Races", "Results", "Leaderboard"];
+      return ["Dashboard", "Manage Teams", "Manage Seasons", "Drivers", "Cars", "Races", "Leaderboard", "Results"];
     }
     if (role === "user") {
-      return ["Dashboard", "Drivers", "Cars", "Results"];
+      return ["Dashboard", "Drivers", "Cars", "Leaderboard"];
     }
     return ["Dashboard"];
   };
@@ -87,19 +98,22 @@ function App() {
 
   const fetchLists = async () => {
     try {
-      const [t, d, c, r, s] = await Promise.all([
+      const [t, d, c, r, s, u] = await Promise.all([
         api.getTeams(),
         api.getDrivers(),
         api.getCars(),
         api.getRaces(),
-        api.getSeasons() // 🔥 เพิ่ม
+        api.getSeasons(),
+        api.getUsers()
       ]);
 
-      setTeams(t.data.data);
-      setDriversList(d.data.data);
-      setCarsList(c.data.data);
-      setRacesList(r.data.data);
-      setSeasons(s.data.data); // 🔥 เพิ่ม
+      setTeams(t.data.data || []);
+      setDriversList(d.data.data || []);
+      setCarsList(c.data.data || []);
+      setRacesList(r.data.data || []);
+      setSeasons(s.data.data || []);
+      setUsers(u.data.data || []);
+
     } catch (err) {
       console.error(err);
     }
@@ -116,7 +130,7 @@ function App() {
       if (activeTab === 'Cars') res = await api.getCars();
       if (activeTab === 'Results') res = await api.getResults();
       if (activeTab === 'Races') res = await api.getRaces();
-      if (activeTab === 'Leaderboard') res = await api.getResults(); // 🔥 สำคัญ
+      if (activeTab === 'Leaderboard') res = await api.getResults();
       if (activeTab === 'Manage Users') res = await api.getUsers();
       if (activeTab === 'Manage Teams') res = await api.getTeams();
       if (activeTab === 'Manage Seasons') res = await api.getSeasons();
@@ -170,47 +184,26 @@ function App() {
 
   // ================= UPDATE =================
   const handleUpdate = async (id, data) => {
-  try {
+    try {
+      if (activeTab === "Drivers") await api.updateDriver(id, data);
+      if (activeTab === "Cars") await api.updateCar(id, data);
+      if (activeTab === "Results") await api.updateResult(id, data);
+      if (activeTab === "Races") await api.updateRace(id, data);
+      if (activeTab === "Manage Users") await api.updateUser(id, data);
+      if (activeTab === "Manage Teams") await api.updateTeam(id, data);
+      if (activeTab === "Manage Seasons") await api.updateSeason(id, data);
 
-    if (activeTab === "Drivers") {
-      await api.updateDriver(id, data);
+      loadTabData();
+    } catch (err) {
+      alert("Update failed");
     }
+  };
 
-    if (activeTab === "Cars") {
-      await api.updateCar(id, data);
-    }
-
-    if (activeTab === "Results") {
-      await api.updateResult(id, data);
-    }
-
-    if (activeTab === "Races") {
-      await api.updateRace(id, data);
-    }
-
-    if (activeTab === "Manage Users") {
-      await api.updateUser(id, data);
-    }
-
-    if (activeTab === "Manage Teams") {
-      await api.updateTeam(id, data);
-    }
-
-    if (activeTab === "Manage Seasons") {
-      await api.updateSeason(id, data);
-    }
-
-    loadTabData();
-
-  } catch (err) {
-    alert("Update failed");
-  }
-};
-const filteredData = data.filter(item =>
-  Object.values(item).some(val =>
-    String(val).toLowerCase().includes(searchTerm.toLowerCase())
-  )
-);
+  const filteredData = (data || []).filter(item =>
+    Object.values(item).some(val =>
+      String(val).toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
 
   // ================= LOGIN =================
   if (!isLogin) {
@@ -231,6 +224,7 @@ const filteredData = data.filter(item =>
   // ================= UI =================
   return (
     <div className="app-layout">
+
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -239,6 +233,7 @@ const filteredData = data.filter(item =>
       />
 
       <div className="main-wrapper">
+
         <TopBar
           title={activeTab}
           searchTerm={searchTerm}
@@ -251,11 +246,14 @@ const filteredData = data.filter(item =>
             <Dashboard stats={stats} role={role} currentUser={currentUser} />
           )}
 
+          {/* 🔥 Drivers */}
           {activeTab === 'Drivers' && (
             <Drivers
               data={filteredData}
               loading={loading}
               teams={teams}
+              myTeamIds={getMyTeamIds()}   // 🔥 เพิ่ม
+              role={role}                  // 🔥 เพิ่ม
               handleCreate={handleCreate}
               handleUpdate={handleUpdate}
               handleDelete={handleDelete}
@@ -264,11 +262,14 @@ const filteredData = data.filter(item =>
             />
           )}
 
+          {/* 🔥 Cars */}
           {activeTab === 'Cars' && (
             <Cars
               data={filteredData}
               loading={loading}
               teams={teams}
+              myTeamIds={getMyTeamIds()}   // 🔥 เพิ่ม
+              role={role}                  // 🔥 เพิ่ม
               handleCreate={handleCreate}
               handleUpdate={handleUpdate}
               handleDelete={handleDelete}
@@ -281,10 +282,12 @@ const filteredData = data.filter(item =>
             <Results
               data={filteredData}
               loading={loading}
+              teams={teams}
               racesList={racesList}
               driversList={driversList}
-              carsList={carsList}
               handleCreate={handleCreate}
+              handleUpdate={handleUpdate}
+              handleDelete={handleDelete}
               formData={formData}
               setFormData={setFormData}
             />
@@ -296,6 +299,7 @@ const filteredData = data.filter(item =>
               loading={loading}
               handleCreate={handleCreate}
               handleDelete={handleDelete}
+              handleUpdate={handleUpdate}
               formData={formData}
               setFormData={setFormData}
               seasons={seasons}
@@ -303,11 +307,8 @@ const filteredData = data.filter(item =>
           )}
 
           {activeTab === 'Leaderboard' && (
-            <Leaderboard 
+            <Leaderboard
               data={filteredData}
-              loading={loading}
-              formData={formData}
-              setFormData={setFormData}
               races={racesList}
               drivers={driversList}
             />
@@ -321,6 +322,7 @@ const filteredData = data.filter(item =>
               handleDelete={handleDelete}
               formData={formData}
               setFormData={setFormData}
+              handleUpdate={handleUpdate}
             />
           )}
 
@@ -330,8 +332,10 @@ const filteredData = data.filter(item =>
               loading={loading}
               handleCreate={handleCreate}
               handleDelete={handleDelete}
+              handleUpdate={handleUpdate}
               formData={formData}
               setFormData={setFormData}
+              users={users}
             />
           )}
 
@@ -341,6 +345,7 @@ const filteredData = data.filter(item =>
               loading={loading}
               handleCreate={handleCreate}
               handleDelete={handleDelete}
+              handleUpdate={handleUpdate}
               formData={formData}
               setFormData={setFormData}
             />

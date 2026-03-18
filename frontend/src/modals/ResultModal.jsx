@@ -5,14 +5,17 @@ function ResultModal({
   onSubmit,
   formData,
   setFormData,
-  racesList,
-  driversList,
-  carsList
+  racesList = [],
+  driversList = [],
+  teams = [],   // ✅ กัน undefined
 }) {
+
+  console.log("TEAMS:", teams); // 🔥 debug
+
   return (
     <Popup title="Results Registry" onClose={onClose} onSubmit={onSubmit}>
 
-      {/* Race */}
+      {/* RACE */}
       <select
         value={formData.race_id || ""}
         onChange={(e) =>
@@ -20,14 +23,19 @@ function ResultModal({
         }
       >
         <option value="">Select Race</option>
-        {racesList.map((race) => (
-          <option key={race.race_id} value={race.race_id}>
-            {race.race_name}
-          </option>
-        ))}
+
+        {racesList.length === 0 ? (
+          <option disabled>No races</option>
+        ) : (
+          racesList.map(r => (
+            <option key={r.race_id} value={r.race_id}>
+              {r.race_name}
+            </option>
+          ))
+        )}
       </select>
 
-      {/* Driver */}
+      {/* DRIVER */}
       <select
         value={formData.driver_id || ""}
         onChange={(e) =>
@@ -35,42 +43,58 @@ function ResultModal({
         }
       >
         <option value="">Select Driver</option>
-        {driversList.map((driver) => (
-          <option key={driver.driver_id} value={driver.driver_id}>
-            {driver.first_name} {driver.last_name}
-          </option>
-        ))}
+
+        {driversList.length === 0 ? (
+          <option disabled>No drivers</option>
+        ) : (
+          driversList.map(d => (
+            <option key={d.driver_id} value={d.driver_id}>
+              {d.first_name} {d.last_name}
+            </option>
+          ))
+        )}
       </select>
 
-      {/* Car */}
+      {/* 🔥 TEAM FIX */}
       <select
-        value={formData.car_id || ""}
+        value={formData.team_id || ""}
         onChange={(e) =>
-          setFormData({ ...formData, car_id: e.target.value })
+          setFormData({ ...formData, team_id: e.target.value })
         }
       >
-        <option value="">Select Car</option>
-        {carsList.map((car) => (
-          <option key={car.car_id} value={car.car_id}>
-            {car.brand}
-          </option>
-        ))}
+        <option value="">Select Team</option>
+
+        {teams.length === 0 ? (
+          <option disabled>No teams found</option>
+        ) : (
+          teams.map((t) => (
+            <option key={t.team_id} value={t.team_id}>
+              {/* 🔥 รองรับทั้ง team_name และ name */}
+              {t.team_name || t.name || `Team ${t.team_id}`}
+            </option>
+          ))
+        )}
       </select>
 
-      {/* Finish Position */}
-      <select
+      {/* POSITION */}
+      <input
+        type="number"
+        placeholder="Position"
         value={formData.finish_position || ""}
         onChange={(e) =>
           setFormData({ ...formData, finish_position: e.target.value })
         }
-      >
-        <option value="">Select Finish Position</option>
-        {[...Array(20)].map((_, i) => (
-          <option key={i + 1} value={i + 1}>
-            {i + 1}
-          </option>
-        ))}
-      </select>
+      />
+
+      {/* POINTS */}
+      <input
+        type="number"
+        placeholder="Points"
+        value={formData.points_earned || ""}
+        onChange={(e) =>
+          setFormData({ ...formData, points_earned: e.target.value })
+        }
+      />
 
     </Popup>
   );

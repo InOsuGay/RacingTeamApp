@@ -5,11 +5,17 @@ function DriverModal({
   onSubmit,
   formData,
   setFormData,
-  teams
+  teams,
+  role,        // 🔥 เพิ่ม
+  myTeamIds    // 🔥 เพิ่ม
 }) {
+
+  const isUser = role === "user";
+
   return (
     <Popup title="Drivers Registry" onClose={onClose} onSubmit={onSubmit}>
 
+      {/* FIRST NAME */}
       <input
         type="text"
         placeholder="First Name"
@@ -20,6 +26,7 @@ function DriverModal({
         required
       />
 
+      {/* LAST NAME */}
       <input
         type="text"
         placeholder="Last Name"
@@ -30,6 +37,7 @@ function DriverModal({
         required
       />
 
+      {/* NUMBER */}
       <input
         type="number"
         placeholder="Driver Number"
@@ -39,20 +47,41 @@ function DriverModal({
         }
       />
 
-      <select
-        value={formData.team_id || ""}
-        onChange={(e) =>
-          setFormData({ ...formData, team_id: e.target.value })
-        }
-        required
-      >
-        <option value="">Select Team</option>
-        {teams.map((t) => (
-          <option key={t.team_id} value={t.team_id}>
-            {t.name}
-          </option>
-        ))}
-      </select>
+      {/* TEAM */}
+      {isUser ? (
+        // 🔥 USER → แสดงเฉพาะทีมตัวเอง (readonly)
+        <select
+          value={formData.team_id || ""}
+          disabled
+        >
+          {teams
+            .filter(t => myTeamIds.includes(t.team_id))
+            .map(t => (
+              <option key={t.team_id} value={t.team_id}>
+                {t.team_name || t.name}
+              </option>
+            ))}
+        </select>
+      ) : (
+        // 🔥 ADMIN / MANAGER → เลือกได้หมด
+        <select
+          value={formData.team_id || ""}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              team_id: Number(e.target.value)
+            })
+          }
+          required
+        >
+          <option value="">Select Team</option>
+          {teams.map((t) => (
+            <option key={t.team_id} value={t.team_id}>
+              {t.team_name || t.name}
+            </option>
+          ))}
+        </select>
+      )}
 
     </Popup>
   );

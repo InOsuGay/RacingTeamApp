@@ -5,15 +5,30 @@ function Drivers({
   data,
   loading,
   teams,
+  myTeamIds = [],   // 🔥 เพิ่ม
+  role,             // 🔥 เพิ่ม
   handleCreate,
   handleDelete,
-  handleUpdate,   // 🔥 เพิ่ม
+  handleUpdate,
   formData,
   setFormData
 }) {
 
   const [showPopup, setShowPopup] = useState(false);
   const [editData, setEditData] = useState(null);
+
+  // 🔥 filter ตาม role
+  const filteredData = role === "user"
+    ? data.filter(d => myTeamIds.includes(d.team_id))
+    : data;
+
+  // 🔥 จำกัด select team
+  const teamOptions = role === "user"
+    ? teams.filter(t => myTeamIds.includes(t.team_id))
+    : teams;
+
+  // 🔥 เช็ค add ได้ไหม
+  const canAdd = role !== "user" || myTeamIds.length > 0;
 
   return (
     <div>
@@ -23,15 +38,23 @@ function Drivers({
         <div>
           <div className="page-title">Drivers</div>
           <div className="page-subtitle">
-            {data.length} total drivers
+            {filteredData.length} total drivers
           </div>
         </div>
 
-        <button className="add-btn" onClick={() => {
-          setEditData(null);   // 👉 reset
-          setFormData({});
-          setShowPopup(true);
-        }}>
+        <button
+          className="add-btn"
+          disabled={!canAdd}
+          onClick={() => {
+            setEditData(null);
+
+            setFormData({
+              team_id: role === "user" ? myTeamIds[0] : ""
+            });
+
+            setShowPopup(true);
+          }}
+        >
           + Add Record
         </button>
       </div>
@@ -40,7 +63,7 @@ function Drivers({
       <div className="card table-card">
         {loading ? (
           <div className="empty-state">Loading...</div>
-        ) : data.length === 0 ? (
+        ) : filteredData.length === 0 ? (
           <div className="empty-state">
             <h3>No drivers found</h3>
           </div>
@@ -51,47 +74,55 @@ function Drivers({
                 <th>Name</th>
                 <th>Number</th>
                 <th>Team</th>
-                <th>Actions</th> {/* 🔥 เพิ่ม */}
+                <th>Actions</th>
               </tr>
             </thead>
 
             <tbody>
-              {data.map((d) => (
-                <tr key={d.driver_id}>
-                  <td>{d.first_name} {d.last_name}</td>
-                  <td>{d.driver_number}</td>
-                  <td>{d.team_name || "-"}</td>
+              {filteredData.map((d) => {
 
-                  <td>
-                    {/* EDIT */}
-                    <button
-                      onClick={() => {
-                        setEditData(d);
-                        setFormData({
-                          first_name: d.first_name,
-                          last_name: d.last_name,
-                          driver_number: d.driver_number,
-                          team_id: d.team_id
-                        });
-                        setShowPopup(true);
-                      }}
-                    >
-                      Edit
-                    </button>
+                const canModify =
+                  role !== "user" || myTeamIds.includes(d.team_id);
 
-                    {/* DELETE */}
-                    <button
-                      onClick={() => {
-                        if (window.confirm("Delete this driver?")) {
-                          handleDelete(d);
-                        }
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                return (
+                  <tr key={d.driver_id}>
+                    <td>{d.first_name} {d.last_name}</td>
+                    <td>{d.driver_number}</td>
+                    <td>{d.team_name || "-"}</td>
+
+                    <td>
+                      {canModify && (
+                        <>
+                          <button
+                            onClick={() => {
+                              setEditData(d);
+                              setFormData({
+                                first_name: d.first_name,
+                                last_name: d.last_name,
+                                driver_number: d.driver_number,
+                                team_id: d.team_id
+                              });
+                              setShowPopup(true);
+                            }}
+                          >
+                            Edit
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              if (window.confirm("Delete this driver?")) {
+                                handleDelete(d);
+                              }
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -104,18 +135,28 @@ function Drivers({
           onSubmit={(e) => {
             e.preventDefault();
 
+            const payload = {
+              ...formData,
+              team_id:
+                role === "user"
+                  ? myTeamIds[0]   // 🔥 lock team
+                  : formData.team_id
+            };
+
             if (editData) {
-              handleUpdate(editData.driver_id, formData); // 🔥 update
+              handleUpdate(editData.driver_id, payload);
             } else {
-              handleCreate(e); // 🔥 create
+              handleCreate(e);
             }
 
             setShowPopup(false);
           }}
           formData={formData}
           setFormData={setFormData}
-          teams={teams}
+          teams={teamOptions}   // 🔥 จำกัด dropdown
           isEdit={!!editData}
+          role={role}
+          myTeamIds={myTeamIds}
         />
       )}
 

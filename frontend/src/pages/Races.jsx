@@ -1,63 +1,62 @@
-import React from "react";
+import React, { useState } from "react";
+import Popup from "../components/Popup";
 
-function Races({ data, loading, handleCreate, handleDelete, formData, setFormData, seasons = [] }) {
+function Races({
+  data,
+  loading,
+  handleCreate,
+  handleDelete,
+  handleUpdate,
+  formData,
+  setFormData,
+  seasons = []
+}) {
+
+  const [showModal, setShowModal] = useState(false);
+  const [editData, setEditData] = useState(null);
+
+  const emptyForm = {
+    race_name: "",
+    location: "",
+    race_date: "",
+    total_laps: "",
+    season_id: ""
+  };
+
+  const openCreate = () => {
+    setEditData(null);
+    setFormData(emptyForm);
+    setShowModal(true);
+  };
+
+  const openEdit = (r) => {
+    setEditData(r);
+
+    setFormData({
+      race_name: r.race_name,
+      location: r.location,
+      race_date: r.race_date?.split("T")[0], // 🔥 fix date
+      total_laps: r.total_laps,
+      season_id: r.season_id
+    });
+
+    setShowModal(true);
+  };
 
   return (
     <div>
 
+      {/* HEADER */}
       <div className="page-header">
         <div>
           <div className="page-title">Races</div>
           <div className="page-subtitle">{data.length} races</div>
         </div>
+
+        <button className="add-btn" onClick={openCreate}>
+          + Add Race
+        </button>
       </div>
-
-      {/* FORM */}
-      <form onSubmit={handleCreate} className="card" style={{ display: "grid", gap: "10px" }}>
-        
-        <input
-          type="text"
-          placeholder="Race Name"
-          value={formData.race_name || ""}
-          onChange={(e) => setFormData({ ...formData, race_name: e.target.value })}
-          required
-        />
-
-        <input
-          type="text"
-          placeholder="Location"
-          value={formData.location || ""}
-          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-        />
-
-        <input
-          type="date"
-          value={formData.race_date || ""}
-          onChange={(e) => setFormData({ ...formData, race_date: e.target.value })}
-        />
-
-        <input
-          type="number"
-          placeholder="Total Laps"
-          value={formData.total_laps || ""}
-          onChange={(e) => setFormData({ ...formData, total_laps: e.target.value })}
-        />
-
-        <select
-          value={formData.season_id || ""}
-          onChange={(e) => setFormData({ ...formData, season_id: e.target.value })}
-          required
-        >
-          <option value="">Select Season</option>
-          {seasons.map((s) => (
-            <option key={s.season_id} value={s.season_id}>
-              {s.year}
-            </option>
-          ))}
-        </select>
-
-        <button className="btn-primary">Add Race</button>
-      </form>
 
       {/* TABLE */}
       <div className="card table-card">
@@ -95,7 +94,9 @@ function Races({ data, loading, handleCreate, handleDelete, formData, setFormDat
                   <td>{r.total_laps || "-"}</td>
                   <td>{r.season_year || "-"}</td>
 
-                  <td>
+                  <td style={{ display: "flex", gap: "8px" }}>
+                    <button onClick={() => openEdit(r)}>Edit</button>
+
                     <button
                       onClick={() => {
                         if (window.confirm("Delete this race?")) {
@@ -112,6 +113,95 @@ function Races({ data, loading, handleCreate, handleDelete, formData, setFormDat
           </table>
         )}
       </div>
+
+      {/* MODAL */}
+      {showModal && (
+        <Popup
+          title={editData ? "Edit Race" : "Add Race"}
+          onClose={() => setShowModal(false)}
+          onSubmit={(e) => {
+            e.preventDefault();
+
+            const payload = {
+              ...editData, // 🔥 กันข้อมูลหาย
+              race_name: formData.race_name,
+              location: formData.location,
+              race_date: formData.race_date,
+              total_laps: Number(formData.total_laps),
+              season_id: Number(formData.season_id)
+            };
+
+            if (editData) {
+              handleUpdate(editData.race_id, payload);
+            } else {
+              handleCreate(e);
+            }
+
+            setShowModal(false);
+          }}
+        >
+
+          {/* NAME */}
+          <input
+            type="text"
+            placeholder="Race Name"
+            value={formData.race_name || ""}
+            onChange={(e) =>
+              setFormData({ ...formData, race_name: e.target.value })
+            }
+            required
+          />
+
+          {/* LOCATION */}
+          <input
+            type="text"
+            placeholder="Location"
+            value={formData.location || ""}
+            onChange={(e) =>
+              setFormData({ ...formData, location: e.target.value })
+            }
+          />
+
+          {/* DATE */}
+          <input
+            type="date"
+            value={formData.race_date || ""}
+            onChange={(e) =>
+              setFormData({ ...formData, race_date: e.target.value })
+            }
+          />
+
+          {/* LAPS */}
+          <input
+            type="number"
+            placeholder="Total Laps"
+            value={formData.total_laps || ""}
+            onChange={(e) =>
+              setFormData({ ...formData, total_laps: e.target.value })
+            }
+          />
+
+          {/* SEASON */}
+          <select
+            value={formData.season_id || ""}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                season_id: Number(e.target.value)
+              })
+            }
+            required
+          >
+            <option value="">Select Season</option>
+            {seasons.map((s) => (
+              <option key={s.season_id} value={s.season_id}>
+                {s.year}
+              </option>
+            ))}
+          </select>
+
+        </Popup>
+      )}
 
     </div>
   );
