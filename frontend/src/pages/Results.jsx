@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ResultModal from "../modals/ResultModal";
 
 function Results({
@@ -13,6 +13,11 @@ function Results({
 }) {
 
   const [showPopup, setShowPopup] = useState(false);
+  const [results, setResults] = useState([]);
+
+  useEffect(() => {
+    setResults(data);
+  }, [data]);
 
   const emptyForm = {
     race_id: "",
@@ -21,7 +26,33 @@ function Results({
     finish_position: ""
   };
 
-  /* Button Styles */
+  /* Delete result */
+  const handleDelete = async (id) => {
+
+    const confirmDelete = window.confirm("Delete this result?");
+    if (!confirmDelete) return;
+
+    try {
+
+      const res = await fetch(`http://localhost:3000/api/results/${id}`, {
+        method: "DELETE"
+      });
+
+      if (!res.ok) {
+        throw new Error("Delete failed");
+      }
+
+      // remove row from table
+      setResults(results.filter(r => r.result_id !== id));
+
+    } catch (error) {
+
+      console.error("Delete error:", error);
+
+    }
+  };
+
+  /* Button styles */
   const editButtonStyle = {
     backgroundColor: "#2563eb",
     color: "white",
@@ -59,7 +90,7 @@ function Results({
         <div>
           <div className="page-title">Results</div>
           <div className="page-subtitle">
-            {data.length} race results
+            {results.length} race results
           </div>
         </div>
 
@@ -81,7 +112,7 @@ function Results({
             Loading...
           </div>
 
-        ) : data.length === 0 ? (
+        ) : results.length === 0 ? (
 
           <div className="empty-state">
             <h3>No results found</h3>
@@ -104,7 +135,7 @@ function Results({
 
             <tbody>
 
-              {data.map((result) => (
+              {results.map((result) => (
 
                 <tr key={result.result_id}>
 
@@ -120,7 +151,6 @@ function Results({
 
                   <td>{result.points_earned}</td>
 
-                  {/* Action Buttons */}
                   <td>
 
                     <div style={{ display: "flex", gap: "10px" }}>
@@ -136,9 +166,7 @@ function Results({
 
                       <button
                         style={deleteButtonStyle}
-                        onClick={() =>
-                          alert(`Delete result ID: ${result.result_id}`)
-                        }
+                        onClick={() => handleDelete(result.result_id)}
                       >
                         Delete
                       </button>
@@ -159,7 +187,7 @@ function Results({
 
       </div>
 
-      {/* Add Result Modal */}
+      {/* Modal */}
       {showPopup && (
 
         <ResultModal
