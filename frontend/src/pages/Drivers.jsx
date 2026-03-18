@@ -6,11 +6,14 @@ function Drivers({
   loading,
   teams,
   handleCreate,
+  handleDelete,
+  handleUpdate,   // 🔥 เพิ่ม
   formData,
   setFormData
 }) {
 
   const [showPopup, setShowPopup] = useState(false);
+  const [editData, setEditData] = useState(null);
 
   return (
     <div>
@@ -24,8 +27,11 @@ function Drivers({
           </div>
         </div>
 
-        {/* ✅ ปุ่ม Add */}
-        <button className="add-btn" onClick={() => setShowPopup(true)}>
+        <button className="add-btn" onClick={() => {
+          setEditData(null);   // 👉 reset
+          setFormData({});
+          setShowPopup(true);
+        }}>
           + Add Record
         </button>
       </div>
@@ -37,23 +43,53 @@ function Drivers({
         ) : data.length === 0 ? (
           <div className="empty-state">
             <h3>No drivers found</h3>
-            <p>Start by adding a new driver</p>
           </div>
         ) : (
           <table className="table-modern">
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Name</th>
                 <th>Number</th>
+                <th>Team</th>
+                <th>Actions</th> {/* 🔥 เพิ่ม */}
               </tr>
             </thead>
+
             <tbody>
               {data.map((d) => (
                 <tr key={d.driver_id}>
-                  <td>{d.driver_id}</td>
                   <td>{d.first_name} {d.last_name}</td>
                   <td>{d.driver_number}</td>
+                  <td>{d.team_name || "-"}</td>
+
+                  <td>
+                    {/* EDIT */}
+                    <button
+                      onClick={() => {
+                        setEditData(d);
+                        setFormData({
+                          first_name: d.first_name,
+                          last_name: d.last_name,
+                          driver_number: d.driver_number,
+                          team_id: d.team_id
+                        });
+                        setShowPopup(true);
+                      }}
+                    >
+                      Edit
+                    </button>
+
+                    {/* DELETE */}
+                    <button
+                      onClick={() => {
+                        if (window.confirm("Delete this driver?")) {
+                          handleDelete(d);
+                        }
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -61,18 +97,25 @@ function Drivers({
         )}
       </div>
 
-      {/* ✅ POPUP MODAL */}
+      {/* MODAL */}
       {showPopup && (
         <DriverModal
           onClose={() => setShowPopup(false)}
           onSubmit={(e) => {
             e.preventDefault();
-            handleCreate(e);
+
+            if (editData) {
+              handleUpdate(editData.driver_id, formData); // 🔥 update
+            } else {
+              handleCreate(e); // 🔥 create
+            }
+
             setShowPopup(false);
           }}
           formData={formData}
           setFormData={setFormData}
           teams={teams}
+          isEdit={!!editData}
         />
       )}
 
