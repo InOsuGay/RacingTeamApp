@@ -3,15 +3,30 @@ import {
   Users, 
   Car, 
   LayoutDashboard, 
-  ListOrdered
+  ListOrdered,
+  Shield,
+  Flag,
+  Trophy
 } from 'lucide-react';
 
 const Sidebar = ({ activeTab, setActiveTab, allowedTabs = [], user }) => {
+
   const menuItems = [
     { name: 'Dashboard', icon: <LayoutDashboard size={20} /> },
+
+    // Team Manager
     { name: 'Drivers', icon: <Users size={20} /> },
     { name: 'Cars', icon: <Car size={20} /> },
     { name: 'Results', icon: <ListOrdered size={20} /> },
+
+    // Admin
+    { name: 'Manage Users', icon: <Shield size={20} /> },
+    { name: 'Manage Teams', icon: <Flag size={20} /> },
+    { name: 'Manage Seasons', icon: <Flag size={20} /> },
+
+    // Race Manager
+    { name: 'Races', icon: <Flag size={20} /> },
+    { name: 'Leaderboard', icon: <Trophy size={20} /> },
   ];
 
   const getRoleLabel = (r) => {
@@ -30,7 +45,7 @@ const Sidebar = ({ activeTab, setActiveTab, allowedTabs = [], user }) => {
       <nav className="sidebar-nav">
         <ul className="nav-menu">
           {menuItems
-            .filter(item => allowedTabs.includes(item.name))
+            .filter(item => allowedTabs.includes(item.name)) // 🔥 ใช้ของที่ส่งมา
             .map((item) => (
               <li 
                 key={item.name}

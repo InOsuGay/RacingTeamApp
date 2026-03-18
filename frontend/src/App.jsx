@@ -9,6 +9,11 @@ import Dashboard from "./pages/Dashboard";
 import Drivers from "./pages/Drivers";
 import Cars from "./pages/Cars";
 import Results from "./pages/Results";
+import Races from "./pages/Races";
+import Leaderboard from "./pages/Leaderboard";
+import ManageUsers from "./pages/ManageUsers";
+import ManageTeams from "./pages/ManageTeams";
+import ManageSeasons from "./pages/ManageSeasons";
 
 import './index.css';
 
@@ -22,7 +27,6 @@ function App() {
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
-
   const [formData, setFormData] = useState({});
 
   const [teams, setTeams] = useState([]);
@@ -36,6 +40,20 @@ function App() {
     cars: 0,
     races: 0
   });
+
+  // ================= ROLE =================
+  const getAllowedTabs = () => {
+    if (role === "admin") {
+      return ["Dashboard", "Manage Users", "Manage Teams", "Manage Seasons", "Drivers", "Cars", "Races", "Leaderboard", "Results"];
+    }
+    if (role === "manager") {
+      return ["Dashboard", "Races", "Results", "Leaderboard"];
+    }
+    if (role === "user") {
+      return ["Dashboard", "Drivers", "Cars", "Results"];
+    }
+    return ["Dashboard"];
+  };
 
   // ================= FETCH =================
   useEffect(() => {
@@ -61,9 +79,8 @@ function App() {
         cars: carsRes.data.data.length,
         races: racesRes.data.data.length
       });
-
     } catch (err) {
-      console.error("Dashboard error:", err);
+      console.error(err);
     }
   };
 
@@ -80,7 +97,6 @@ function App() {
       setDriversList(d.data.data);
       setCarsList(c.data.data);
       setRacesList(r.data.data);
-
     } catch (err) {
       console.error(err);
     }
@@ -96,10 +112,14 @@ function App() {
       if (activeTab === 'Drivers') res = await api.getDrivers();
       if (activeTab === 'Cars') res = await api.getCars();
       if (activeTab === 'Results') res = await api.getResults();
+      if (activeTab === 'Races') res = await api.getRaces();
+      if (activeTab === 'Manage Users') res = await api.getUsers();
+      if (activeTab === 'Manage Teams') res = await api.getTeams();
+      if (activeTab === 'Manage Seasons') res = await api.getSeasons();
 
       setData(res.data.data || []);
     } catch (err) {
-      console.error("Load tab error:", err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -113,10 +133,13 @@ function App() {
       if (activeTab === 'Drivers') await api.addDriver(formData);
       if (activeTab === 'Cars') await api.addCar(formData);
       if (activeTab === 'Results') await api.addResult(formData);
+      if (activeTab === 'Races') await api.addRace(formData);
+      if (activeTab === 'Manage Users') await api.addUser(formData);
+      if (activeTab === 'Manage Teams') await api.addTeam(formData);
+      if (activeTab === 'Manage Seasons') await api.addSeason(formData);
 
       setFormData({});
       loadTabData();
-
     } catch (err) {
       alert("Create failed: " + err.message);
     }
@@ -130,6 +153,10 @@ function App() {
       if (activeTab === 'Drivers') await api.deleteDriver(row.driver_id);
       if (activeTab === 'Cars') await api.deleteCar(row.car_id);
       if (activeTab === 'Results') await api.deleteResult(row.result_id);
+      if (activeTab === 'Races') await api.deleteRace(row.race_id);
+      if (activeTab === 'Manage Users') await api.deleteUser(row.user_id);
+      if (activeTab === 'Manage Teams') await api.deleteTeam(row.team_id);
+      if (activeTab === 'Manage Seasons') await api.deleteSeason(row.season_id);
 
       loadTabData();
     } catch (err) {
@@ -171,7 +198,7 @@ function App() {
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        allowedTabs={["Dashboard", "Drivers", "Cars", "Results"]}
+        allowedTabs={getAllowedTabs()}
         user={currentUser}
       />
 
@@ -186,46 +213,39 @@ function App() {
         <main className="content">
 
           {activeTab === 'Dashboard' && (
-            <Dashboard
-              stats={stats}
-              role={role}
-              currentUser={currentUser}
-            />
+            <Dashboard stats={stats} role={role} currentUser={currentUser} />
           )}
 
           {activeTab === 'Drivers' && (
-            <Drivers
-              data={filteredData}
-              loading={loading}
-              teams={teams}
-              handleCreate={handleCreate}
-              formData={formData}
-              setFormData={setFormData}
-            />
+            <Drivers data={filteredData} loading={loading} teams={teams} handleCreate={handleCreate} formData={formData} setFormData={setFormData} />
           )}
 
           {activeTab === 'Cars' && (
-            <Cars
-              data={filteredData}
-              loading={loading}
-              teams={teams}
-              handleCreate={handleCreate}
-              formData={formData}
-              setFormData={setFormData}
-            />
+            <Cars data={filteredData} loading={loading} teams={teams} handleCreate={handleCreate} formData={formData} setFormData={setFormData} />
           )}
 
           {activeTab === 'Results' && (
-            <Results
-              data={filteredData}
-              loading={loading}
-              racesList={racesList}
-              driversList={driversList}
-              carsList={carsList}
-              handleCreate={handleCreate}
-              formData={formData}
-              setFormData={setFormData}
-            />
+            <Results data={filteredData} loading={loading} racesList={racesList} driversList={driversList} carsList={carsList} handleCreate={handleCreate} formData={formData} setFormData={setFormData} />
+          )}
+
+          {activeTab === 'Races' && (
+            <Races data={filteredData} loading={loading} handleCreate={handleCreate} handleDelete={handleDelete} formData={formData} setFormData={setFormData} />
+          )}
+
+          {activeTab === 'Leaderboard' && (
+            <Leaderboard data={data} />
+          )}
+
+          {activeTab === 'Manage Users' && (
+            <ManageUsers data={filteredData} loading={loading} handleCreate={handleCreate} handleDelete={handleDelete} formData={formData} setFormData={setFormData} />
+          )}
+
+          {activeTab === 'Manage Teams' && (
+            <ManageTeams data={filteredData} loading={loading} handleCreate={handleCreate} handleDelete={handleDelete} formData={formData} setFormData={setFormData} />
+          )}
+
+          {activeTab === 'Manage Seasons' && (
+            <ManageSeasons data={filteredData} loading={loading} handleCreate={handleCreate} handleDelete={handleDelete} formData={formData} setFormData={setFormData} />
           )}
 
         </main>
